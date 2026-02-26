@@ -7,6 +7,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "fetch-page": "tsx scripts/fetch-page.ts",
+    "scrape": "tsx scripts/scrape-all.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
