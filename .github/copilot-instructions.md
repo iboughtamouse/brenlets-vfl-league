@@ -19,19 +19,21 @@ Documentation should capture **decisions and architecture**, not metrics. Line c
 ```
 [ valorantfantasyleague.net ]
         |
-        | HTTP GET (nightly cron via GitHub Actions)
+        | Playwright (headless Chromium, nightly cron via GitHub Actions)
         v
-[ Scraper (Node.js + Cheerio) ] --> [ SQLite ] --> [ Web App (Node.js) ] --> [ Browser ]
+[ Scraper (Node.js + Playwright) ] --> [ SQLite ] --> [ Web App (Node.js) ] --> [ Browser ]
 ```
 
-VFL exposes no public API. All data is scraped from individual team pages (e.g. `https://www.valorantfantasyleague.net/team/22832`). No authentication is required, no JS rendering needed — confirmed via PoC.
+VFL is a Next.js app — all team data is rendered client-side via JavaScript. Plain HTTP returns only "Loading team data...". Playwright runs a headless browser, waits for the page to fully render, then reads the DOM. No authentication is required.
+
+The VFL API (`api.valorantfantasyleague.net`) was investigated as an alternative but rejected: it requires authentication for game week metadata, auth is unreliable (expires randomly, requires Discord-based registration), and undocumented endpoints could change without notice. Reading the rendered page is more stable and honest — we see exactly what users see.
 
 ## Settled Stack Decisions
 
 | Layer    | Decision                                                  |
 | -------- | --------------------------------------------------------- |
 | Language | TypeScript throughout                                     |
-| Scraper  | Node.js + Cheerio                                         |
+| Scraper  | Node.js + Playwright (headless Chromium)                  |
 | Database | SQLite (15 teams × ~52 game weeks — no need for Postgres) |
 | Web App  | Node.js + Express or Hono (TBD)                           |
 | Frontend | Plain HTML/CSS or minimal React (TBD — keep it simple)    |
@@ -42,11 +44,11 @@ VFL exposes no public API. All data is scraped from individual team pages (e.g. 
 
 Managed as a committed JSON config file in the repo. Not hardcoded in source, not in a database table, not behind an admin UI. Roster changes = one-line JSON edit + commit.
 
-## Game Week Identification — Needs Verification
+## Game Week Identification — Confirmed
 
-The scraper is intended to read the game week number directly from VFL page HTML. **This has not been confirmed yet.** The first implementation task must be: fetch one team page, inspect raw HTML, and verify whether a game week label is present in the markup. If it is not, the fallback is commissioner-triggered scrapes with a manually supplied game week label.
+The rendered VFL team page displays the game week label directly below the team name (e.g. "GW 1: 0 PTS"). Playwright reads this from the DOM after the page fully renders. No auth required, no inference needed — the label is right there on screen.
 
-Do not build the data model around game week parsing until this is verified.
+The VFL API was investigated as an alternative. It was rejected: game week metadata requires authentication, VFL auth is unreliable (expires randomly, requires Discord-based registration), and undocumented endpoints could change without notice.
 
 ## Data Model (Intended)
 
