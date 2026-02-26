@@ -4,7 +4,7 @@
 
 A lightweight web app that automates weekly standings tracking for a Fantasy Valorant league (Brenlets VFL). The commissioner currently visits each team page on valorantfantasyleague.net, reads scores, and posts them to Discord manually. This project eliminates that.
 
-The scraper and database layer are implemented and working. The web app and scheduled automation are next.
+The app is live at [brenlets-vfl-league.vercel.app](https://brenlets-vfl-league.vercel.app/). The scraper runs nightly via GitHub Actions, writes to Railway Postgres, and the web app on Vercel serves the standings page.
 
 ## Working Approach
 

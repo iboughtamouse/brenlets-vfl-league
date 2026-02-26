@@ -44,7 +44,7 @@ Swap SQLite for Postgres. The web app deploys to Vercel (serverless — no persi
 
 ---
 
-## Phase 2 — Standings Web App
+## Phase 2 — Standings Web App ✅
 
 Serve standings data through a web UI. Prove the full read path: Postgres → API → browser.
 
@@ -85,12 +85,12 @@ Deploy the web app and make it reliable enough to run unattended.
 
 - [x] Deploy Hono + React app to Vercel
 - [x] Provision Postgres on Railway, configure connection string
-- [ ] Add global error handling to the Hono server (`app.onError`)
+- [x] Add global error handling to the Hono server (`app.onError`)
 - [ ] Refactor server to accept injected DB (factory function) for testability
 - [ ] Add route-level smoke tests for API endpoints
 - [x] Configure production environment (env vars, connection strings)
 - [x] Verify scraper → Postgres → Vercel pipeline works end-to-end in production
-- [ ] Basic health check (`/health` endpoint)
+- [x] Basic health check (`/health` endpoint)
 
 **Done when:** App is live on the internet, updates automatically, and recovers gracefully from transient failures.
 

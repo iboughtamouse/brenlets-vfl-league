@@ -1,6 +1,6 @@
 # Technical Overview
 
-> **Note:** This document was written before implementation began. Some assumptions turned out to be wrong and are corrected below. The current source of truth for architecture and stack decisions is [.github/copilot-instructions.md](.github/copilot-instructions.md).
+> **Note:** This document was written before implementation began and has been updated to reflect what was actually built. The current source of truth for architecture and stack decisions is [.github/copilot-instructions.md](.github/copilot-instructions.md).
 
 ## Proof of Concept
 
@@ -17,7 +17,7 @@ Before implementation, the scraping approach was validated manually. All team pa
         |
         | Playwright (headless Chromium, nightly cron via GitHub Actions)
         v
-[ Scraper (Node.js + Playwright) ] --> [ SQLite ] --> [ Web App (Node.js) ] --> [ Browser ]
+[ Scraper (GitHub Actions) ] --> [ Postgres (Railway) ] <-- [ Web App (Vercel) ] --> [ Browser ]
 ```
 
 ### Components
@@ -28,40 +28,44 @@ Before implementation, the scraping approach was validated manually. All team pa
 - Waits for the page to fully render (`[data-testid="team-page"]` selector), then reads the team name and game week label from the DOM
 - Game week label (e.g. "GW 1: 0 PTS") is parsed by a dedicated parser function
 - Writes results to the database with upsert semantics
-- Runs on a schedule (nightly) or on-demand via `npm run scrape`
+- Runs nightly via GitHub Actions, on push to `config/teams.json`, or on-demand via `npm run scrape`
 
 **Database**
 
-- SQLite via better-sqlite3 (synchronous API, WAL mode)
+- Postgres on Railway (accessed via node-postgres `pg`)
 - `teams` table: `vfl_id` (integer PK from URL), `manager`, `url`, `team_name`
 - `scores` table: `team_vfl_id` (FK), `game_week`, `points`, `scraped_at`, with a unique constraint on `(team_vfl_id, game_week)`
 - Upsert on re-scrape; all distinct game weeks preserved for history
+- Local dev uses Docker (postgres:17-alpine)
 
 **Web App**
 
-- Not yet implemented
-- Will read from the database and render a public standings page
-- No user accounts, no write operations from the frontend — read-only
+- Hono (API routes) + React (frontend) on Vercel
+- API: `/api/standings`, `/api/standings/weeks`, `/health`
+- Hono app definition separated from server entry point — shared by local dev (`@hono/node-server`) and production (`api/index.ts` serverless function)
+- Global error handler (`app.onError`) catches unhandled errors
+- Fully public, read-only — no user accounts
 
 **Cron / Scheduler**
 
-- GitHub Actions scheduled workflow (planned)
+- GitHub Actions scheduled workflow (daily at 10:00 UTC)
+- Also triggers on push when `config/teams.json` changes
+- Manual trigger via `workflow_dispatch`
 
 ---
 
 ## Stack
 
-| Layer    | Decision                                 |
-| -------- | ---------------------------------------- |
-| Language | TypeScript throughout                    |
-| Scraper  | Node.js + Playwright (headless Chromium) |
-| Database | SQLite via better-sqlite3                |
-| Web App  | Node.js + Express or Hono (TBD)          |
-| Frontend | Plain HTML/CSS or minimal React (TBD)    |
-| Hosting  | Railway or Render (TBD)                  |
-| Cron     | GitHub Actions scheduled workflow        |
+| Layer    | Decision                                       |
+| -------- | ---------------------------------------------- |
+| Language | TypeScript throughout                          |
+| Scraper  | Node.js + Playwright (headless Chromium)       |
+| Database | Postgres on Railway                            |
+| Web App  | Hono (server/API) + React (frontend) on Vercel |
+| Hosting  | Vercel (web app) + Railway (database)          |
+| Cron     | GitHub Actions scheduled workflow              |
 
-**What changed from the original plan:** Cheerio was replaced by Playwright because VFL requires JavaScript rendering. PostgreSQL was dropped in favor of SQLite (small league, low volume). TypeScript was chosen as the project language.
+**What changed from the original plan:** Cheerio was replaced by Playwright because VFL requires JavaScript rendering. SQLite was initially chosen for simplicity but replaced by Postgres — Vercel's serverless model has no persistent disk, so SQLite can't work in production. Express was considered but Hono was chosen for its Web Standards compatibility (works in both Node.js and serverless). Plain HTML was considered for the frontend but React was chosen to support week-over-week navigation.
 
 ---
 
@@ -80,7 +84,7 @@ Currently there is none. Playwright already handles JavaScript execution, so bas
 Team IDs (e.g. `/team/22832`) don't change, but team names change frequently. The scraper re-fetches the name on every scrape and updates the `teams` row.
 
 **The team URL list needs manual maintenance.**
-Stored in `config/teams.json`. If a manager joins or leaves, someone edits the JSON file and commits. One-time action per roster change.
+Stored in `config/teams.json`. If a manager joins or leaves, someone edits the JSON file and commits. Pushing the change triggers an automatic scrape.
 
 ---
 
@@ -90,5 +94,5 @@ All open questions from the planning phase have been answered:
 
 - **Team URL list:** JSON config file committed to the repo.
 - **Game week identification:** Parsed from the rendered page. The VFL team page displays "GW 1: 0 PTS" directly below the team name.
-- **Site access:** Public standings, lightweight admin area for commissioner (v1). User accounts deferred to v2.
+- **Site access:** Public standings, no admin UI. Team list managed via `teams.json` commits.
 - **Discord bot:** Deferred to v2. Website is the source of truth.

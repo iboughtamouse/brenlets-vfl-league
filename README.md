@@ -1,22 +1,40 @@
 # Brenlets VFL Hub
 
-Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Scrapes team pages nightly, stores scores in SQLite, and serves a public standings page.
+Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Scrapes team pages nightly, stores scores in Postgres, and serves a public standings page.
+
+**Live at:** [brenlets-vfl-league.vercel.app](https://brenlets-vfl-league.vercel.app/)
 
 ## How It Works
 
-VFL is a Next.js app — team data is rendered client-side. A Playwright-based scraper visits each team page, waits for the JavaScript to render, and reads the team name, game week, and points from the DOM. Results are saved to a SQLite database with upsert semantics (re-scraping the same game week updates rather than duplicates; all distinct game weeks are preserved).
+VFL is a Next.js app — team data is rendered client-side. A Playwright-based scraper visits each team page, waits for the JavaScript to render, and reads the team name, game week, and points from the DOM. Results are saved to Postgres with upsert semantics (re-scraping the same game week updates rather than duplicates; all distinct game weeks are preserved).
+
+The scraper runs nightly via GitHub Actions and writes directly to Railway Postgres. The web app (Hono + React on Vercel) reads from the same database and serves the standings page.
+
+## Architecture
+
+```
+[ valorantfantasyleague.net ]
+        |
+        | Playwright (headless Chromium, scheduled via GitHub Actions)
+        v
+[ Scraper (GitHub Actions) ] --> [ Postgres (Railway) ] <-- [ Web App (Vercel) ] --> [ Browser ]
+```
 
 ## Project Structure
 
 ```
-config/teams.json      — League roster (manager name + VFL URL)
-src/scraper/parser.ts  — Pure parsing function for GW labels
-src/scraper/index.ts   — Playwright scraper (visits pages, extracts data)
-src/db/index.ts        — SQLite database layer (schema, queries, batch save)
-src/web/index.ts       — Web app (not yet implemented)
-scripts/scrape-all.ts  — CLI entry point: scrape all teams → save to DB
-fixtures/              — Saved HTML fixture for testing
-tests/                 — Vitest unit + integration tests
+config/teams.json       — League roster (manager name + VFL URL)
+src/scraper/parser.ts   — Pure parsing function for GW labels
+src/scraper/index.ts    — Playwright scraper (visits pages, extracts data)
+src/db/index.ts         — Postgres database layer (schema, queries, batch save)
+src/web/app.ts          — Hono app with API routes (shared by dev + Vercel)
+src/web/server.ts       — Local dev server (@hono/node-server + static files)
+api/index.ts            — Vercel serverless entry point
+client/                 — React frontend (Vite)
+scripts/scrape-all.ts   — CLI entry point: scrape all teams → save to DB
+fixtures/               — Saved HTML fixture for testing
+tests/                  — Vitest unit + integration tests
+.github/workflows/      — GitHub Actions (scheduled scraping)
 ```
 
 ## Setup
@@ -26,11 +44,16 @@ npm install
 npx playwright install chromium
 ```
 
+For local development with the full stack, you also need Docker for a local Postgres instance. See [.github/copilot-instructions.md](.github/copilot-instructions.md) for architecture details.
+
 ## Usage
 
 ```bash
 # Run the scraper against all teams and save to database
 npm run scrape
+
+# Start the dev server (API + client)
+npm run dev:server
 
 # Run tests
 npm test
@@ -42,6 +65,6 @@ npm run format
 
 ## Status
 
-The scraper and database layer are implemented and tested. Next up: standings web page, then GitHub Actions cron job.
+The app is live and updating automatically. Scraper runs nightly via GitHub Actions, data is stored in Railway Postgres, and the standings page is served from Vercel.
 
-See [CURRENT_PROCESS.md](CURRENT_PROCESS.md) for what the manual workflow looks like today, [IDEAL_PROCESS.md](IDEAL_PROCESS.md) for what this project aims to replace it with, and [TECHNICAL_OVERVIEW.md](TECHNICAL_OVERVIEW.md) for early architecture notes.
+See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full build plan and [.github/copilot-instructions.md](.github/copilot-instructions.md) for architecture decisions.
