@@ -107,7 +107,7 @@ Formatting and linting are automated — do not maintain style preferences in do
 - Unit test parser functions against that fixture with explicit assertions (e.g. `expect(result.points).toBe(457)`) — not snapshots
 - When VFL changes their markup, a failing test identifies exactly which field broke
 
-**Snapshot testing:** Deferred. After the scraper is implemented and we've seen what the HTML actually looks like, evaluate whether snapshotting the raw HTML fixture is a worthwhile early-warning layer for structural drift. Do not assume it's needed — verify first.
+**Snapshot testing:** Evaluated and rejected. VFL pages contain too much noise (scripts, ads, player rosters, Next.js hydration data) for snapshots to be useful — they'd trip on every irrelevant change and train us to ignore them. The fixture-based selector test already catches the failure we care about: our DOM selectors breaking against VFL's markup.
 
 **Database layer:** Integration tests for the core write/read paths. Confirm schema and queries behave as expected.
 
