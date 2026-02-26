@@ -4,10 +4,15 @@
  * API routes:
  *   GET /api/standings         — standings for the latest game week (or ?gw=N)
  *   GET /api/standings/weeks   — list of available game weeks
+ *
+ * In production, also serves the built React client from client/dist/.
  */
 
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { VflDatabase } from '../db/index.js';
 
 const app = new Hono();
@@ -50,6 +55,23 @@ app.get('/api/standings', async (c) => {
   const standings = await db.getStandings(gameWeek);
   return c.json({ standings, gameWeek });
 });
+
+// ---------------------------------------------------------------------------
+// Static files — serve built React client in production
+// ---------------------------------------------------------------------------
+
+const clientDist = resolve(import.meta.dirname, '../../client/dist');
+
+if (existsSync(clientDist)) {
+  // Serve static assets (JS, CSS, images) — root is relative to CWD
+  app.use('/*', serveStatic({ root: './client/dist' }));
+
+  // SPA fallback — serve index.html for any non-API route
+  app.get('*', (c) => {
+    const html = readFileSync(resolve(clientDist, 'index.html'), 'utf-8');
+    return c.html(html);
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Start
