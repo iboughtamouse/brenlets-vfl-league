@@ -15,6 +15,33 @@ import { VflDatabase } from '../db/index.js';
 
 const app = new Hono();
 
+// ---------------------------------------------------------------------------
+// Global error handler — catch unhandled errors in any route
+// ---------------------------------------------------------------------------
+
+app.onError((err, c) => {
+  console.error(`[${c.req.method}] ${c.req.path} — unhandled error:`, err);
+
+  // Don't leak internal details to the client
+  return c.json({ error: 'Internal server error' }, 500);
+});
+
+// ---------------------------------------------------------------------------
+// Health check
+// ---------------------------------------------------------------------------
+
+app.get('/health', async (c) => {
+  try {
+    const database = getDb();
+    await database.initialize();
+    await database.pool.query('SELECT 1');
+    return c.json({ status: 'ok' });
+  } catch (err) {
+    console.error('Health check failed:', err);
+    return c.json({ status: 'error', message: 'Database unreachable' }, 503);
+  }
+});
+
 // Lazy-initialized DB — created on first request, reused across warm
 // invocations in serverless. In local dev, the pool stays alive for the
 // lifetime of the process.
