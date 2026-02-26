@@ -1,2 +1,1 @@
-// Web app entry point — not yet implemented.
-// Express vs Hono TBD.
+// Web app entry point — see server.ts for the Hono server.

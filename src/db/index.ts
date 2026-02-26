@@ -1,16 +1,16 @@
 /**
- * Database layer — SQLite via better-sqlite3.
+ * Database layer — Postgres via node-postgres (pg).
  *
  * Schema:
  *   teams  — one row per VFL team (keyed by the numeric ID from the URL)
  *   scores — one row per team per game week (upserted on re-scrape)
  *
- * All operations are synchronous (better-sqlite3's design). This is fine
- * for a low-volume app writing ~17 rows per scrape.
+ * All operations are async. The pool manages connections automatically.
  */
 
-import Database from 'better-sqlite3';
-import { resolve } from 'node:path';
+import pg from 'pg';
+
+const { Pool } = pg;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,7 +54,7 @@ const SCHEMA = `
   );
 
   CREATE TABLE IF NOT EXISTS scores (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          SERIAL PRIMARY KEY,
     team_vfl_id INTEGER NOT NULL REFERENCES teams(vfl_id),
     game_week   INTEGER NOT NULL,
     points      REAL    NOT NULL,
@@ -81,17 +81,18 @@ export function extractVflId(url: string): number {
 // ---------------------------------------------------------------------------
 
 export class VflDatabase {
-  readonly db: Database.Database;
+  readonly pool: pg.Pool;
 
-  constructor(dbPath?: string) {
-    const resolvedPath = dbPath ?? resolve(import.meta.dirname, '..', '..', 'data', 'vfl.db');
-    this.db = new Database(resolvedPath);
+  constructor(connectionString?: string) {
+    const connStr =
+      connectionString ?? process.env.DATABASE_URL ?? 'postgresql://vfl:vfl@localhost:5432/vfl';
 
-    // Enable WAL mode for better concurrent read performance.
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('foreign_keys = ON');
+    this.pool = new Pool({ connectionString: connStr });
+  }
 
-    this.db.exec(SCHEMA);
+  /** Run schema migrations. Call once at startup. */
+  async initialize(): Promise<void> {
+    await this.pool.query(SCHEMA);
   }
 
   // -----------------------------------------------------------------------
@@ -99,22 +100,27 @@ export class VflDatabase {
   // -----------------------------------------------------------------------
 
   /** Upsert a team — insert or update manager/url/team_name. */
-  upsertTeam(vflId: number, manager: string, url: string, teamName: string | null): void {
-    this.db
-      .prepare(
-        `INSERT INTO teams (vfl_id, manager, url, team_name)
-         VALUES (?, ?, ?, ?)
-         ON CONFLICT(vfl_id) DO UPDATE SET
-           manager   = excluded.manager,
-           url       = excluded.url,
-           team_name = excluded.team_name`,
-      )
-      .run(vflId, manager, url, teamName);
+  async upsertTeam(
+    vflId: number,
+    manager: string,
+    url: string,
+    teamName: string | null,
+  ): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO teams (vfl_id, manager, url, team_name)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT(vfl_id) DO UPDATE SET
+         manager   = EXCLUDED.manager,
+         url       = EXCLUDED.url,
+         team_name = EXCLUDED.team_name`,
+      [vflId, manager, url, teamName],
+    );
   }
 
   /** Get all teams. */
-  getTeams(): TeamRow[] {
-    return this.db.prepare('SELECT * FROM teams ORDER BY manager').all() as TeamRow[];
+  async getTeams(): Promise<TeamRow[]> {
+    const result = await this.pool.query('SELECT * FROM teams ORDER BY manager');
+    return result.rows;
   }
 
   // -----------------------------------------------------------------------
@@ -122,49 +128,51 @@ export class VflDatabase {
   // -----------------------------------------------------------------------
 
   /** Upsert a score — insert or update points/scraped_at for (team, game_week). */
-  upsertScore(teamVflId: number, gameWeek: number, points: number, scrapedAt: string): void {
-    this.db
-      .prepare(
-        `INSERT INTO scores (team_vfl_id, game_week, points, scraped_at)
-         VALUES (?, ?, ?, ?)
-         ON CONFLICT(team_vfl_id, game_week) DO UPDATE SET
-           points     = excluded.points,
-           scraped_at = excluded.scraped_at`,
-      )
-      .run(teamVflId, gameWeek, points, scrapedAt);
+  async upsertScore(
+    teamVflId: number,
+    gameWeek: number,
+    points: number,
+    scrapedAt: string,
+  ): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO scores (team_vfl_id, game_week, points, scraped_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT(team_vfl_id, game_week) DO UPDATE SET
+         points     = EXCLUDED.points,
+         scraped_at = EXCLUDED.scraped_at`,
+      [teamVflId, gameWeek, points, scrapedAt],
+    );
   }
 
   /** Get all scores for a specific game week, joined with team info. */
-  getStandings(gameWeek: number): StandingsRow[] {
-    return this.db
-      .prepare(
-        `SELECT t.vfl_id, t.manager, t.url, t.team_name,
-                s.game_week, s.points, s.scraped_at
-         FROM scores s
-         JOIN teams t ON t.vfl_id = s.team_vfl_id
-         WHERE s.game_week = ?
-         ORDER BY s.points DESC`,
-      )
-      .all(gameWeek) as StandingsRow[];
+  async getStandings(gameWeek: number): Promise<StandingsRow[]> {
+    const result = await this.pool.query(
+      `SELECT t.vfl_id, t.manager, t.url, t.team_name,
+              s.game_week, s.points, s.scraped_at
+       FROM scores s
+       JOIN teams t ON t.vfl_id = s.team_vfl_id
+       WHERE s.game_week = $1
+       ORDER BY s.points DESC`,
+      [gameWeek],
+    );
+    return result.rows;
   }
 
   /** Get the latest (highest) game week number, or null if no scores exist. */
-  getLatestGameWeek(): number | null {
-    const row = this.db.prepare('SELECT MAX(game_week) AS gw FROM scores').get() as
-      | { gw: number | null }
-      | undefined;
-    return row?.gw ?? null;
+  async getLatestGameWeek(): Promise<number | null> {
+    const result = await this.pool.query('SELECT MAX(game_week) AS gw FROM scores');
+    return result.rows[0]?.gw ?? null;
   }
 
   /** Get all scores for a specific team across all game weeks. */
-  getTeamHistory(vflId: number): ScoreRow[] {
-    return this.db
-      .prepare(
-        `SELECT * FROM scores
-         WHERE team_vfl_id = ?
-         ORDER BY game_week ASC`,
-      )
-      .all(vflId) as ScoreRow[];
+  async getTeamHistory(vflId: number): Promise<ScoreRow[]> {
+    const result = await this.pool.query(
+      `SELECT * FROM scores
+       WHERE team_vfl_id = $1
+       ORDER BY game_week ASC`,
+      [vflId],
+    );
+    return result.rows;
   }
 
   // -----------------------------------------------------------------------
@@ -177,7 +185,7 @@ export class VflDatabase {
    *
    * Returns the count of successfully saved results.
    */
-  saveScrapeBatch(
+  async saveScrapeBatch(
     results: Array<{
       manager: string;
       url: string;
@@ -187,28 +195,55 @@ export class VflDatabase {
       scrapedAt: string;
       error?: string;
     }>,
-  ): number {
+  ): Promise<number> {
+    const client = await this.pool.connect();
     let saved = 0;
 
-    const run = this.db.transaction(() => {
+    try {
+      await client.query('BEGIN');
+
       for (const r of results) {
         if (r.error || r.gameWeek == null || r.points == null) {
           continue;
         }
 
         const vflId = extractVflId(r.url);
-        this.upsertTeam(vflId, r.manager, r.url, r.teamName);
-        this.upsertScore(vflId, r.gameWeek, r.points, r.scrapedAt);
+
+        await client.query(
+          `INSERT INTO teams (vfl_id, manager, url, team_name)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT(vfl_id) DO UPDATE SET
+             manager   = EXCLUDED.manager,
+             url       = EXCLUDED.url,
+             team_name = EXCLUDED.team_name`,
+          [vflId, r.manager, r.url, r.teamName],
+        );
+
+        await client.query(
+          `INSERT INTO scores (team_vfl_id, game_week, points, scraped_at)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT(team_vfl_id, game_week) DO UPDATE SET
+             points     = EXCLUDED.points,
+             scraped_at = EXCLUDED.scraped_at`,
+          [vflId, r.gameWeek, r.points, r.scrapedAt],
+        );
+
         saved++;
       }
-    });
 
-    run();
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+
     return saved;
   }
 
-  /** Close the database connection. */
-  close(): void {
-    this.db.close();
+  /** Close all pool connections. */
+  async close(): Promise<void> {
+    await this.pool.end();
   }
 }

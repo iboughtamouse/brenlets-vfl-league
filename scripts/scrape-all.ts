@@ -2,12 +2,12 @@
  * scrape-all.ts
  *
  * Runs the scraper against all teams in config/teams.json, prints
- * the results, and saves them to the SQLite database.
+ * the results, and saves them to the Postgres database.
  *
  * Run with: npm run scrape
  */
 
-import { readFile, mkdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { scrapeAll, type TeamConfig } from '../src/scraper/index.js';
 import { VflDatabase } from '../src/db/index.js';
@@ -25,15 +25,12 @@ const failed = results.filter((r) => r.error).length;
 console.log(`\nDone: ${succeeded} succeeded, ${failed} failed.\n`);
 
 // Save to database
-const dbDir = resolve(import.meta.dirname, '..', 'data');
-await mkdir(dbDir, { recursive: true });
-
-const dbPath = resolve(dbDir, 'vfl.db');
-const db = new VflDatabase(dbPath);
+const db = new VflDatabase();
 
 try {
-  const saved = db.saveScrapeBatch(results);
-  console.log(`Saved ${saved} results to database (${dbPath}).`);
+  await db.initialize();
+  const saved = await db.saveScrapeBatch(results);
+  console.log(`Saved ${saved} results to database.`);
 } finally {
-  db.close();
+  await db.close();
 }
