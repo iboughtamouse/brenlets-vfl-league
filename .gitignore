@@ -7,6 +7,7 @@ dist/
 # SQLite database file
 *.db
 *.sqlite
+data/
 
 # OS
 .DS_Store

@@ -1,16 +1,16 @@
 /**
  * scrape-all.ts
  *
- * Runs the scraper against all teams in config/teams.json and prints
- * the results as JSON. This is the entry point for manual runs and
- * will later be called by the GitHub Actions cron job.
+ * Runs the scraper against all teams in config/teams.json, prints
+ * the results, and saves them to the SQLite database.
  *
  * Run with: npm run scrape
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { scrapeAll, type TeamConfig } from '../src/scraper/index.js';
+import { VflDatabase } from '../src/db/index.js';
 
 const teamsPath = resolve(import.meta.dirname, '..', 'config', 'teams.json');
 const teams: TeamConfig[] = JSON.parse(await readFile(teamsPath, 'utf-8'));
@@ -23,4 +23,17 @@ const succeeded = results.filter((r) => !r.error).length;
 const failed = results.filter((r) => r.error).length;
 
 console.log(`\nDone: ${succeeded} succeeded, ${failed} failed.\n`);
-console.log(JSON.stringify(results, null, 2));
+
+// Save to database
+const dbDir = resolve(import.meta.dirname, '..', 'data');
+await mkdir(dbDir, { recursive: true });
+
+const dbPath = resolve(dbDir, 'vfl.db');
+const db = new VflDatabase(dbPath);
+
+try {
+  const saved = db.saveScrapeBatch(results);
+  console.log(`Saved ${saved} results to database (${dbPath}).`);
+} finally {
+  db.close();
+}
