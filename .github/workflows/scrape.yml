@@ -5,6 +5,9 @@ on:
     # Every day at 10:00 UTC — safe to run daily since upsert
     # semantics mean re-scraping the same game week just updates the row.
     - cron: '0 10 * * *'
+  push:
+    paths:
+      - 'config/teams.json'
   workflow_dispatch: # Manual trigger from GitHub Actions UI
 
 jobs:
