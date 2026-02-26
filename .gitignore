@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.js.map
+.env
+.env.local
+
+# SQLite database file
+*.db
+*.sqlite
+
+# OS
+.DS_Store
