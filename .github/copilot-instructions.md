@@ -2,7 +2,7 @@
 
 ## What This Project Is
 
-A lightweight web app that automates weekly standings tracking for a 17-team Fantasy Valorant league (Brenlets VFL). The commissioner currently visits each team page on valorantfantasyleague.net, reads scores, and posts them to Discord manually. This project eliminates that.
+A lightweight web app that automates weekly standings tracking for a Fantasy Valorant league (Brenlets VFL). The commissioner currently visits each team page on valorantfantasyleague.net, reads scores, and posts them to Discord manually. This project eliminates that.
 
 The scraper and database layer are implemented and working. The web app and scheduled automation are next.
 
@@ -32,15 +32,15 @@ The VFL API (`api.valorantfantasyleague.net`) was investigated as an alternative
 
 ## Settled Stack Decisions
 
-| Layer    | Decision                                                  |
-| -------- | --------------------------------------------------------- |
-| Language | TypeScript throughout                                     |
-| Scraper  | Node.js + Playwright (headless Chromium)                  |
-| Database | SQLite (17 teams × ~52 game weeks — no need for Postgres) |
-| Web App  | Node.js + Express or Hono (TBD)                           |
-| Frontend | Plain HTML/CSS or minimal React (TBD — keep it simple)    |
-| Cron     | GitHub Actions scheduled workflow                         |
-| Hosting  | Railway or Render (TBD)                                   |
+| Layer    | Decision                                                 |
+| -------- | -------------------------------------------------------- |
+| Language | TypeScript throughout                                    |
+| Scraper  | Node.js + Playwright (headless Chromium)                 |
+| Database | SQLite (small league, low volume — no need for Postgres) |
+| Web App  | Node.js + Express or Hono (TBD)                          |
+| Frontend | Plain HTML/CSS or minimal React (TBD — keep it simple)   |
+| Cron     | GitHub Actions scheduled workflow                        |
+| Hosting  | Railway or Render (TBD)                                  |
 
 ## Team URL List
 

@@ -61,7 +61,7 @@ Before implementation, the scraping approach was validated manually. All team pa
 | Hosting  | Railway or Render (TBD)                  |
 | Cron     | GitHub Actions scheduled workflow        |
 
-**What changed from the original plan:** Cheerio was replaced by Playwright because VFL requires JavaScript rendering. PostgreSQL was dropped in favor of SQLite (17 teams × ~52 game weeks doesn't need it). TypeScript was chosen as the project language.
+**What changed from the original plan:** Cheerio was replaced by Playwright because VFL requires JavaScript rendering. PostgreSQL was dropped in favor of SQLite (small league, low volume). TypeScript was chosen as the project language.
 
 ---
 

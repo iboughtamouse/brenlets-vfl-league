@@ -9,7 +9,7 @@ VFL (valorantfantasyleague.net) has an API (`api.valorantfantasyleague.net`), bu
 ## What Actually Happens Each Game Week
 
 1. The commissioner manually navigates to each manager's team page on valorantfantasyleague.net.
-   - There are currently 17 managers in the league, meaning 17 separate page loads.
+   - There are currently 15+ managers in the league, each with a separate page.
 2. On each page, the commissioner reads the team name and total point score for the game week.
 3. All scores are manually compiled and sorted.
 4. The commissioner formats the standings as a Discord message (markdown hyperlinks, point totals) and posts it to the league channel.

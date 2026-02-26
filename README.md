@@ -9,7 +9,7 @@ VFL is a Next.js app — team data is rendered client-side. A Playwright-based s
 ## Project Structure
 
 ```
-config/teams.json      — 17-team roster (manager name + VFL URL)
+config/teams.json      — League roster (manager name + VFL URL)
 src/scraper/parser.ts  — Pure parsing function for GW labels
 src/scraper/index.ts   — Playwright scraper (visits pages, extracts data)
 src/db/index.ts        — SQLite database layer (schema, queries, batch save)
@@ -29,7 +29,7 @@ npx playwright install chromium
 ## Usage
 
 ```bash
-# Run the scraper against all 17 teams and save to database
+# Run the scraper against all teams and save to database
 npm run scrape
 
 # Run tests
