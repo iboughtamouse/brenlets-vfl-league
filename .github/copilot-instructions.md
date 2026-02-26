@@ -2,15 +2,17 @@
 
 ## What This Project Is
 
-A lightweight web app that automates weekly standings tracking for a ~15-person Fantasy Valorant league (Brenlets VFL). Currently the commissioner manually visits 15 team pages on valorantfantasyleague.net, reads scores, and posts them to Discord. This project eliminates that.
+A lightweight web app that automates weekly standings tracking for a 17-team Fantasy Valorant league (Brenlets VFL). The commissioner currently visits each team page on valorantfantasyleague.net, reads scores, and posts them to Discord manually. This project eliminates that.
 
-No code exists yet. This is an active, early-stage build.
+The scraper and database layer are implemented and working. The web app and scheduled automation are next.
 
 ## Working Approach
 
 This project is **collaboration-oriented, not solutions-oriented**. Do not rush to "done". Take time to establish correct foundations — version control, testing strategy, schema decisions, stack choices — before writing implementation code. Shortcuts compound. Flag tradeoffs rather than silently picking one.
 
 The workflow is **AI-driven, human-assisted**: AI agents write all code, documentation, and configuration. The human (project owner) reviews every change and makes final calls on architecture and direction.
+
+**Work in small, reviewable chunks.** Each unit of work should be small enough for a human to review in one sitting — typically one logical change (a new module, a schema change, a test file). Do not stack multiple features or major changes into a single review pass. Complete one piece, pause for human review, then proceed. This is non-negotiable.
 
 Documentation should capture **decisions and architecture**, not metrics. Line counts, test counts, and other numerical snapshots drift immediately and produce noise during review. The right things to document are: why a decision was made, what was considered and rejected, and how the system is structured. When updating documentation, update the meaning — not the numbers.
 
@@ -34,7 +36,7 @@ The VFL API (`api.valorantfantasyleague.net`) was investigated as an alternative
 | -------- | --------------------------------------------------------- |
 | Language | TypeScript throughout                                     |
 | Scraper  | Node.js + Playwright (headless Chromium)                  |
-| Database | SQLite (15 teams × ~52 game weeks — no need for Postgres) |
+| Database | SQLite (17 teams × ~52 game weeks — no need for Postgres) |
 | Web App  | Node.js + Express or Hono (TBD)                           |
 | Frontend | Plain HTML/CSS or minimal React (TBD — keep it simple)    |
 | Cron     | GitHub Actions scheduled workflow                         |
@@ -50,12 +52,14 @@ The rendered VFL team page displays the game week label directly below the team 
 
 The VFL API was investigated as an alternative. It was rejected: game week metadata requires authentication, VFL auth is unreliable (expires randomly, requires Discord-based registration), and undocumented endpoints could change without notice.
 
-## Data Model (Intended)
+## Data Model
 
-- `teams` — manager name, VFL team URL
-- `scores` — team_id, game_week, points, scraped_at
+- `teams` — `vfl_id` (integer PK, extracted from URL), `manager`, `url`, `team_name`
+- `scores` — `team_vfl_id` (FK → teams), `game_week`, `points`, `scraped_at`, with a unique constraint on `(team_vfl_id, game_week)`
 
-Team names are re-fetched on every scrape (they change between game weeks). They are not stored once at setup time.
+Team names are re-fetched on every scrape (they change between game weeks) and stored on the `teams` row — always reflecting the current name. Historical names are not tracked.
+
+Upsert semantics: re-scraping the same game week updates the existing row. All distinct game weeks are preserved for week-over-week history.
 
 ## Access Model
 
@@ -66,9 +70,9 @@ Team names are re-fetched on every scrape (they change between game weeks). They
 
 ## Planned Implementation Order
 
-1. Fetch one team page → inspect HTML → confirm game week parsing approach
-2. Scraper that fetches all team pages and outputs structured JSON
-3. Define SQLite schema → wire scraper writes to it
+1. ~~Fetch one team page → inspect HTML → confirm game week parsing approach~~ ✓
+2. ~~Scraper that fetches all team pages and outputs structured JSON~~ ✓
+3. ~~Define SQLite schema → wire scraper writes to it~~ ✓
 4. Standings web page (read-only, public)
 5. GitHub Actions cron job
 6. Commissioner admin area (last — it's the only piece requiring access control)
@@ -116,4 +120,3 @@ Formatting and linting are automated — do not maintain style preferences in do
 - Express vs Hono
 - Plain HTML vs minimal React
 - Exact hosting provider
-- Whether game week is parsed from the page or manually labelled
