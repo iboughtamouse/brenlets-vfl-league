@@ -10,7 +10,7 @@
  * Run with: npm run fetch-page
  */
 
-const TEAM_URL = "https://www.valorantfantasyleague.net/team/22832";
+const TEAM_URL = 'https://www.valorantfantasyleague.net/team/22832';
 
 const response = await fetch(TEAM_URL);
 
@@ -21,5 +21,5 @@ if (!response.ok) {
 
 const html = await response.text();
 
-console.log("=== RAW HTML ===\n");
+console.log('=== RAW HTML ===\n');
 console.log(html);

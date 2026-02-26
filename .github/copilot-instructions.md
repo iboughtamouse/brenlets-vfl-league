@@ -28,15 +28,15 @@ VFL exposes no public API. All data is scraped from individual team pages (e.g. 
 
 ## Settled Stack Decisions
 
-| Layer | Decision |
-|---|---|
-| Language | TypeScript throughout |
-| Scraper | Node.js + Cheerio |
+| Layer    | Decision                                                  |
+| -------- | --------------------------------------------------------- |
+| Language | TypeScript throughout                                     |
+| Scraper  | Node.js + Cheerio                                         |
 | Database | SQLite (15 teams × ~52 game weeks — no need for Postgres) |
-| Web App | Node.js + Express or Hono (TBD) |
-| Frontend | Plain HTML/CSS or minimal React (TBD — keep it simple) |
-| Cron | GitHub Actions scheduled workflow |
-| Hosting | Railway or Render (TBD) |
+| Web App  | Node.js + Express or Hono (TBD)                           |
+| Frontend | Plain HTML/CSS or minimal React (TBD — keep it simple)    |
+| Cron     | GitHub Actions scheduled workflow                         |
+| Hosting  | Railway or Render (TBD)                                   |
 
 ## Team URL List
 
@@ -71,11 +71,32 @@ Team names are re-fetched on every scrape (they change between game weeks). They
 5. GitHub Actions cron job
 6. Commissioner admin area (last — it's the only piece requiring access control)
 
+## Commit Convention
+
+All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) standard. This is enforced via commitlint + Husky at the `commit-msg` hook level — non-conforming messages will be rejected.
+
+Examples:
+
+- `feat: add standings page`
+- `fix: handle missing game week label in scraper`
+- `chore: update teams.json with new manager`
+- `test: add parser unit tests`
+- `docs: update architecture overview`
+
+## Code Style
+
+Formatting and linting are automated — do not maintain style preferences in documentation.
+
+- **Prettier** (`.prettierrc`): enforces formatting. Run `npm run format` to format, `npm run format:check` to verify.
+- **ESLint** (`eslint.config.js`): TypeScript-aware linting via `typescript-eslint`. Run `npm run lint`.
+- **Pre-commit hook**: runs `lint` and `format:check` automatically before every commit.
+
 ## Testing Strategy
 
 **Framework:** Vitest. Zero config, ESM-native, current standard for new Node.js projects.
 
 **Scraper** is the highest-value test target — most fragile, hardest to debug silently.
+
 - Save real HTML from a VFL team page as a fixture file
 - Unit test parser functions against that fixture with explicit assertions (e.g. `expect(result.points).toBe(457)`) — not snapshots
 - When VFL changes their markup, a failing test identifies exactly which field broke
