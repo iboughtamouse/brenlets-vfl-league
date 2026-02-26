@@ -137,7 +137,11 @@ function App() {
               </thead>
               <tbody>
                 {standings.map((standing, index) => (
-                  <tr key={standing.vfl_id} className={index % 2 === 0 ? 'even-row' : 'odd-row'}>
+                  <tr
+                    key={standing.vfl_id}
+                    className={`${index % 2 === 0 ? 'even-row' : 'odd-row'} clickable-row`}
+                    onClick={() => window.open(standing.url, '_blank')}
+                  >
                     <td className="rank-cell">
                       {index < 3 && <span className="trophy">🏆</span>}#{index + 1}
                     </td>

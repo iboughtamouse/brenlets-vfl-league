@@ -299,6 +299,10 @@ marquee {
   box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
 }
 
+.clickable-row {
+  cursor: pointer;
+}
+
 .rank-cell {
   font-weight: bold;
   color: #ffff00;
