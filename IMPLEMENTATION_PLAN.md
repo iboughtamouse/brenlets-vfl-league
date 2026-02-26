@@ -27,18 +27,18 @@ Build the pipeline that fetches team data from VFL and persists it.
 
 ---
 
-## Phase 1.5 — Postgres Migration (in progress)
+## Phase 1.5 — Postgres Migration ✅
 
 Swap SQLite for Postgres. The web app deploys to Vercel (serverless — no persistent disk), so SQLite can't work in production. Postgres on Railway is accessible from both Vercel and GitHub Actions.
 
-- [ ] Spin up local Postgres via Docker for development
-- [ ] Install `pg` (node-postgres) and types
-- [ ] Rewrite `VflDatabase` class: same interface, async methods, Postgres queries
-- [ ] Update `scrape-all.ts` for async DB calls
-- [ ] Update `server.ts` for async DB calls
-- [ ] Migrate all DB integration tests to Postgres
-- [ ] Remove `better-sqlite3` dependency and `data/` directory
-- [ ] Verify full pipeline against local Postgres
+- [x] Spin up local Postgres via Docker for development
+- [x] Install `pg` (node-postgres) and types
+- [x] Rewrite `VflDatabase` class: same interface, async methods, Postgres queries
+- [x] Update `scrape-all.ts` for async DB calls
+- [x] Update `server.ts` for async DB calls
+- [x] Migrate all DB integration tests to Postgres
+- [x] Remove `better-sqlite3` dependency and `data/` directory
+- [x] Verify full pipeline against local Postgres
 
 **Done when:** All existing functionality works identically but backed by Postgres. Tests pass against a real local Postgres instance. No SQLite references remain.
 
@@ -52,11 +52,11 @@ Serve standings data through a web UI. Prove the full read path: Postgres → AP
 - [x] Choose frontend approach → React (via Vite)
 - [x] Install dependencies (Hono, @hono/node-server)
 - [x] Build Hono server with API routes (`/api/standings`, `/api/standings/weeks`)
-- [ ] Set up Vite for React client build
-- [ ] Build standings table component (fetches from API, renders table)
-- [ ] Wire Hono to serve the built React app
-- [ ] Add `dev` scripts for both server and client
-- [ ] Verify end-to-end: real scraped data renders in browser
+- [x] Set up Vite for React client build
+- [x] Build standings table component (fetches from API, renders table)
+- [x] Wire Hono to serve the built React app
+- [x] Add `dev` scripts for both server and client
+- [x] Verify end-to-end: real scraped data renders in browser
 
 **Done when:** Running the dev server shows a standings table populated from Postgres.
 
