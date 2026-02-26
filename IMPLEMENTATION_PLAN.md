@@ -62,18 +62,20 @@ Serve standings data through a web UI. Prove the full read path: Postgres → AP
 
 ---
 
-## Phase 3 — Scheduled Scraping
+## Phase 3 — Scheduled Scraping ✅
 
 Automate the scraper so standings update without manual intervention.
 
-- [ ] Create GitHub Actions workflow for scheduled scraping
-- [ ] Configure cron schedule (timing TBD — likely nightly or after match days)
-- [ ] Store Railway Postgres connection string as a GitHub Actions secret
-- [ ] Scraper connects to Railway Postgres from CI and writes directly
+- [x] Create GitHub Actions workflow for scheduled scraping
+- [x] Configure cron schedule (daily at 10:00 UTC)
+- [x] Store Railway Postgres connection string as a GitHub Actions secret (`DATABASE_URL` → public URL)
+- [x] Scraper connects to Railway Postgres from CI and writes directly
 - [ ] Add error reporting: surface failures visibly (GitHub Actions notifications, or a simple Discord webhook)
-- [ ] Test the workflow manually via `workflow_dispatch` before relying on the schedule
+- [x] Test the workflow manually via `workflow_dispatch` before relying on the schedule
 
 **Done when:** Standings update automatically on schedule without human intervention. Failures are visible.
+
+> **Note:** Error reporting (Discord webhook or similar) deferred — GitHub Actions already emails on failure by default. Will revisit if silent failures become an issue.
 
 ---
 
@@ -82,7 +84,7 @@ Automate the scraper so standings update without manual intervention.
 Deploy the web app and make it reliable enough to run unattended.
 
 - [ ] Deploy Hono + React app to Vercel
-- [ ] Provision Postgres on Railway, configure connection string
+- [x] Provision Postgres on Railway, configure connection string
 - [ ] Add global error handling to the Hono server (`app.onError`)
 - [ ] Refactor server to accept injected DB (factory function) for testability
 - [ ] Add route-level smoke tests for API endpoints
