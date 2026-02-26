@@ -91,7 +91,7 @@ function App() {
       {/* Marquee */}
       <div className="marquee-container">
         <marquee behavior="scroll" direction="left">
-          ✨ Welcome to the OFFICIAL Brenlets VFL Stats Page! ✨ Updated Every Week! ✨ Tell Your
+          ✨ Welcome to the OFFICIAL Brenlets VFL Stats Page! ✨ Updated Daily! ✨ Tell Your
           Friends! ✨ GG NO RE ✨
         </marquee>
       </div>

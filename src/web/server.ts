@@ -15,7 +15,6 @@ import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { VflDatabase } from '../db/index.js';
 import { app as apiApp } from './app.js';
 
 const app = new Hono();
@@ -45,10 +44,6 @@ if (existsSync(clientDist)) {
 // ---------------------------------------------------------------------------
 
 const port = Number(process.env.PORT ?? 3000);
-const db = new VflDatabase();
-
-await db.initialize();
-await db.close();
 
 serve({ fetch: app.fetch, port }, () => {
   console.log(`Server running at http://localhost:${port}`);
