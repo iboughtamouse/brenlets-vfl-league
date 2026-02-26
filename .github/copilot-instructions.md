@@ -21,10 +21,16 @@ Documentation should capture **decisions and architecture**, not metrics. Line c
 ```
 [ valorantfantasyleague.net ]
         |
-        | Playwright (headless Chromium, nightly cron via GitHub Actions)
+        | Playwright (headless Chromium, scheduled via GitHub Actions)
         v
-[ Scraper (Node.js + Playwright) ] --> [ SQLite ] --> [ Web App (Node.js) ] --> [ Browser ]
+[ Scraper (GitHub Actions) ] --> [ Postgres (Railway) ] <-- [ Web App (Vercel) ] --> [ Browser ]
 ```
+
+Three separate concerns, each running where it fits best:
+
+- **Scraper** runs in GitHub Actions on a schedule. GitHub-hosted runners have ample memory for headless Chromium. Writes directly to Railway Postgres.
+- **Database** is Postgres on Railway (Hobby plan). Accessible over the network from both GitHub Actions and Vercel.
+- **Web app** is Hono + React on Vercel. Reads from Postgres, serves the UI. Vercel handles deployment and scaling.
 
 VFL is a Next.js app — all team data is rendered client-side via JavaScript. Plain HTTP returns only "Loading team data...". Playwright runs a headless browser, waits for the page to fully render, then reads the DOM. No authentication is required.
 
@@ -32,15 +38,14 @@ The VFL API (`api.valorantfantasyleague.net`) was investigated as an alternative
 
 ## Settled Stack Decisions
 
-| Layer    | Decision                                                 |
-| -------- | -------------------------------------------------------- |
-| Language | TypeScript throughout                                    |
-| Scraper  | Node.js + Playwright (headless Chromium)                 |
-| Database | SQLite (small league, low volume — no need for Postgres) |
-| Web App  | Node.js + Express or Hono (TBD)                          |
-| Frontend | Plain HTML/CSS or minimal React (TBD — keep it simple)   |
-| Cron     | GitHub Actions scheduled workflow                        |
-| Hosting  | Railway or Render (TBD)                                  |
+| Layer    | Decision                                       |
+| -------- | ---------------------------------------------- |
+| Language | TypeScript throughout                          |
+| Scraper  | Node.js + Playwright (headless Chromium)       |
+| Database | Postgres on Railway                            |
+| Web App  | Hono (server/API) + React (frontend) on Vercel |
+| Cron     | GitHub Actions scheduled workflow              |
+| Hosting  | Vercel (web app) + Railway (database)          |
 
 ## Team URL List
 
@@ -64,18 +69,13 @@ Upsert semantics: re-scraping the same game week updates the existing row. All d
 ## Access Model
 
 - Standings page: **fully public**, no authentication
-- Commissioner admin area (manage team list): **lightweight access control** on that one section only — no user accounts, no roles system
+- Team list: managed via `teams.json` in the repo — commissioner edits the file and commits. No admin UI for v1.
 - User accounts / membership features: explicitly deferred to v2
 - Discord bot: explicitly deferred to v2
 
-## Planned Implementation Order
+## Implementation Plan
 
-1. ~~Fetch one team page → inspect HTML → confirm game week parsing approach~~ ✓
-2. ~~Scraper that fetches all team pages and outputs structured JSON~~ ✓
-3. ~~Define SQLite schema → wire scraper writes to it~~ ✓
-4. Standings web page (read-only, public)
-5. GitHub Actions cron job
-6. Commissioner admin area (last — it's the only piece requiring access control)
+The full phased build plan lives in [`IMPLEMENTATION_PLAN.md`](../IMPLEMENTATION_PLAN.md). Consult it for what's done, what's next, and open questions.
 
 ## Commit Convention
 
@@ -114,9 +114,3 @@ Formatting and linting are automated — do not maintain style preferences in do
 **Web app routes:** Minimal smoke tests — routes respond, return correct shape. Thin logic doesn't warrant heavy coverage.
 
 **No E2E browser tests for v1.**
-
-## What Has Not Been Decided Yet
-
-- Express vs Hono
-- Plain HTML vs minimal React
-- Exact hosting provider
