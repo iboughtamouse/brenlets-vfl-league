@@ -414,43 +414,61 @@ marquee {
 .stat-box {
   flex: 1;
   min-width: 250px;
-  background: linear-gradient(135deg, #1a0033 0%, #330066 50%, #1a0033 100%);
-  border: 6px ridge #ffff00;
   padding: 20px;
   text-align: center;
+}
+
+.stat-box-top {
+  background: #000000;
+  border: 8px ridge #ffcc00;
   box-shadow:
-    0 0 30px rgba(255, 255, 0, 0.5),
-    inset 0 0 20px rgba(255, 0, 255, 0.2);
-  animation: stat-glow 3s ease-in-out infinite;
+    0 0 35px rgba(255, 200, 0, 0.8),
+    inset 0 0 20px rgba(255, 200, 0, 0.15);
 }
 
-@keyframes stat-glow {
-  0%,
-  100% {
-    box-shadow:
-      0 0 30px rgba(255, 255, 0, 0.5),
-      inset 0 0 20px rgba(255, 0, 255, 0.2);
-  }
-  50% {
-    box-shadow:
-      0 0 40px rgba(255, 0, 255, 0.8),
-      inset 0 0 30px rgba(0, 255, 255, 0.3);
-  }
+.stat-box-bottom {
+  background: #110000;
+  border: 8px inset #ff0000;
+  box-shadow:
+    0 0 25px rgba(255, 0, 0, 0.6),
+    inset 0 0 15px rgba(255, 0, 0, 0.1);
 }
 
-.stat-title {
-  font-size: 18px;
-  color: #ffff00;
+.stat-box-top .stat-title {
+  font-size: 20px;
+  color: #ffcc00;
+  margin-bottom: 10px;
+  font-weight: bold;
+  text-shadow:
+    2px 2px 0px #000,
+    0 0 12px rgba(255, 200, 0, 0.9);
+}
+
+.stat-box-top .stat-value {
+  font-size: 32px;
+  color: #00ff00;
+  font-weight: bold;
+  text-shadow:
+    2px 2px 0px #000,
+    0 0 15px rgba(0, 255, 0, 0.9);
+}
+
+.stat-box-bottom .stat-title {
+  font-size: 20px;
+  color: #ff4444;
   margin-bottom: 10px;
   font-weight: bold;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
 }
 
-.stat-value {
-  font-size: 24px;
-  color: #00ffff;
+.stat-box-bottom .stat-value {
+  font-size: 32px;
+  color: #ff0000;
   font-weight: bold;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+  text-shadow:
+    2px 2px 0px #000,
+    0 0 10px rgba(255, 0, 0, 0.8);
+  animation: blink-animation 1.2s steps(2, start) infinite;
 }
 
 /* Footer */
