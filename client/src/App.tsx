@@ -64,6 +64,7 @@ function App() {
   function selectWeek(week: number) {
     setSelectedWeek(week);
     setLoading(true);
+    setError(null);
     const params = new URLSearchParams({ gw: String(week) });
     if (currentEvent) params.set('event', currentEvent);
     fetch(`/api/standings?${params}`)
