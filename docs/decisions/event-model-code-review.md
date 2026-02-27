@@ -17,31 +17,30 @@ This changeset adds an `event` dimension to the scores table so the app can trac
 
 ## Issues
 
-### 1. `getLatestEvent` relies on `ORDER BY id DESC` — fragile
+### 1. ~~`getLatestEvent` relies on `ORDER BY id DESC` — fragile~~ RESOLVED
 
-`src/db/index.ts:168` — Using `ORDER BY id DESC LIMIT 1` assumes the most recently inserted row is the "current" event. If you ever backfill historical data or re-scrape an older event, this will return the wrong event. Consider ordering by `scraped_at DESC` instead, or storing a separate "current event" marker.
+Fixed. `getLatestEvent` now uses `ORDER BY scraped_at DESC LIMIT 1`.
 
-### 2. `initialize()` called on every request
+### 2. ~~`initialize()` called on every request~~ NOT AN ISSUE
 
-`src/web/app.ts:65`, `src/web/app.ts:76`, `src/web/app.ts:94` — Every API route calls `await database.initialize()` which runs `CREATE TABLE IF NOT EXISTS` on every single request. This is harmless but wasteful. Consider tracking initialization state with a boolean flag on the `VflDatabase` instance. (Pre-existing issue, not introduced by this change.)
+`VflDatabase` already tracks initialization with a `private initialized = false` flag. After the first call, `initialize()` short-circuits with `if (this.initialized) return;` — a boolean check, essentially free. No change needed.
 
-### 3. No `event` field in the client `Standing` interface
+### 3. ~~No `event` field in the client `Standing` interface~~ RESOLVED
 
-`client/src/App.tsx:4-12` — The `Standing` interface is missing the `event` field that the API now returns. Not a runtime error since TS extra properties are fine from JSON, but it means the client can't display or use the event from individual standing rows if needed later.
+Fixed. The client `Standing` interface now includes `event: string`.
 
-### 4. No validation on the `event` query parameter
+### 4. ~~No validation on the `event` query parameter~~ NOT AN ISSUE
 
-`src/web/app.ts:78`, `src/web/app.ts:97` — The `event` param from the query string is passed directly to SQL queries. While parameterized queries prevent SQL injection, there's no sanity check (e.g. max length, non-empty). A request like `?event=` (empty string) would silently return no results rather than an error.
+Queries are parameterized (no injection risk). An empty or nonexistent event returns an empty result set, which is correct behavior for a public read-only API. Adding validation would be writing code for a scenario that doesn't cause problems.
 
-### 5. `scrapeCurrentEvent` throws on failure — will abort the entire scrape
+### 5. ~~`scrapeCurrentEvent` throws on failure — will abort the entire scrape~~ CORRECT BEHAVIOR
 
-`src/scraper/index.ts:54` — If the leaderboard page changes layout or is temporarily down, the hard throw in `scrapeCurrentEvent` kills the whole `scrapeAll` run. The team pages might still be scrapeable. Consider whether this should be a fatal error or if there's a sensible fallback (e.g. reading the last known event from the DB).
+The `event` column is `NOT NULL` and part of the unique constraint `UNIQUE(team_vfl_id, event, game_week)`. Without knowing the event name, scores can't be saved correctly. Falling back to the last known event from the DB would risk saving scores under the wrong event during a VFL event transition — the exact data corruption the event model was built to prevent. Failing loudly is the right choice. GitHub Actions emails on failure, so it won't go unnoticed.
 
 ## Nits
 
-- `src/web/app.ts:63-71` — The `/api/standings/events` endpoint exists in the backend but isn't consumed by the frontend yet. The design doc mentions it's for future use — just flagging it's dead code for now.
-- `client/src/App.tsx:112` — `currentEvent.toUpperCase()` — if the VFL page returns something like `"VCT 2026 : Masters Santiago"`, the colon/spaces are fine, but worth confirming the casing looks right with the actual scraped value.
+- `src/web/app.ts` — The `/api/standings/events` endpoint isn't consumed by the frontend yet. For future use (event selector).
 
 ## Verdict
 
-Solid change overall. The main thing to address before merging is **#1** (`getLatestEvent` ordering) since it's a correctness issue that'll bite during the next event transition — the exact scenario this feature is designed to handle. The rest are minor or opportunistic improvements.
+All issues resolved or determined to be non-issues. The change is solid as shipped.
