@@ -1,8 +1,8 @@
 # Implementation Plan
 
-Full build plan from initial development through production deployment. Phases are sequential — complete one before starting the next. Each phase has a clear "done when" gate.
+> **Historical document.** Build plan from initial development. All phases are complete. For current architecture, see [CLAUDE.md](../../CLAUDE.md).
 
-For project conventions, architecture, and working approach, see [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
+Full build plan from initial development through production deployment. Phases are sequential — complete one before starting the next. Each phase has a clear "done when" gate.
 
 ---
 

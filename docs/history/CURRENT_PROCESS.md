@@ -1,5 +1,7 @@
 # Current Process
 
+> **Historical document.** Describes the manual process this app was built to replace.
+
 ## Context
 
 The Brenlets VFL league is a Fantasy Valorant league managed informally through Discord. At the end of each game week, one person (the commissioner) is responsible for compiling standings and posting them to the group.

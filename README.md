@@ -44,7 +44,7 @@ npm install
 npx playwright install chromium
 ```
 
-For local development with the full stack, you also need Docker for a local Postgres instance. See [.github/copilot-instructions.md](.github/copilot-instructions.md) for architecture details.
+For local development with the full stack, you also need Docker for a local Postgres instance. See [docs/architecture.md](docs/architecture.md) for stack decisions and component details.
 
 ## Usage
 
@@ -67,4 +67,4 @@ npm run format
 
 The app is live and updating automatically. Scraper runs nightly via GitHub Actions, data is stored in Railway Postgres, and the standings page is served from Vercel.
 
-See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full build plan and [.github/copilot-instructions.md](.github/copilot-instructions.md) for architecture decisions.
+**For AI agents:** Start with [CLAUDE.md](CLAUDE.md). For architecture details, see [docs/architecture.md](docs/architecture.md).

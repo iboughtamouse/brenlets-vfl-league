@@ -1,5 +1,7 @@
 # Ideal Process
 
+> **Historical document.** This vision has been realized — the app is live and functioning as described below.
+
 ## For Managers
 
 A manager can visit a URL at any time and see:
