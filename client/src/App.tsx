@@ -6,18 +6,21 @@ interface Standing {
   manager: string;
   url: string;
   team_name: string | null;
+  event: string;
   game_week: number;
   points: number;
   scraped_at: string;
 }
 
 interface WeeksResponse {
+  event: string | null;
   weeks: number[];
   latest: number | null;
 }
 
 interface StandingsResponse {
   standings: Standing[];
+  event: string | null;
   gameWeek: number | null;
 }
 
@@ -27,6 +30,7 @@ const VISITOR_COUNT = Math.floor(Math.random() * 99999) + 10000;
 function App() {
   const [weeks, setWeeks] = useState<number[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [currentEvent, setCurrentEvent] = useState<string | null>(null);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,9 +41,12 @@ function App() {
       .then((res) => res.json())
       .then((data: WeeksResponse) => {
         setWeeks(data.weeks);
+        setCurrentEvent(data.event);
         if (data.latest != null) {
           setSelectedWeek(data.latest);
-          return fetch(`/api/standings?gw=${data.latest}`)
+          const params = new URLSearchParams({ gw: String(data.latest) });
+          if (data.event) params.set('event', data.event);
+          return fetch(`/api/standings?${params}`)
             .then((res) => res.json())
             .then((standingsData: StandingsResponse) => {
               setStandings(standingsData.standings);
@@ -57,7 +64,9 @@ function App() {
   function selectWeek(week: number) {
     setSelectedWeek(week);
     setLoading(true);
-    fetch(`/api/standings?gw=${week}`)
+    const params = new URLSearchParams({ gw: String(week) });
+    if (currentEvent) params.set('event', currentEvent);
+    fetch(`/api/standings?${params}`)
       .then((res) => res.json())
       .then((data: StandingsResponse) => {
         setStandings(data.standings);
@@ -98,6 +107,14 @@ function App() {
 
       {/* Main Content */}
       <main className="content-area">
+        {/* Current Event */}
+        {currentEvent && (
+          <div className="event-label">
+            <span className="blink">▶</span> {currentEvent.toUpperCase()}{' '}
+            <span className="blink">◀</span>
+          </div>
+        )}
+
         {/* Week Selector */}
         <div className="week-selector">
           <span className="selector-label">SELECT GAME WEEK:</span>

@@ -17,19 +17,20 @@ const teams: TeamConfig[] = JSON.parse(await readFile(teamsPath, 'utf-8'));
 
 console.log(`\nScraping ${teams.length} teams...\n`);
 
-const results = await scrapeAll(teams);
+const { event, teams: results } = await scrapeAll(teams);
 
 const succeeded = results.filter((r) => !r.error).length;
 const failed = results.filter((r) => r.error).length;
 
 console.log(`\nDone: ${succeeded} succeeded, ${failed} failed.\n`);
+console.log(`Event: ${event}`);
 
 // Save to database
 const db = new VflDatabase();
 
 try {
   await db.initialize();
-  const saved = await db.saveScrapeBatch(results);
+  const saved = await db.saveScrapeBatch(event, results);
   console.log(`Saved ${saved} results to database.`);
 } finally {
   await db.close();

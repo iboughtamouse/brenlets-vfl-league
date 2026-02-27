@@ -26,6 +26,39 @@ export interface ScrapedTeam {
 }
 
 /**
+ * Visit the VFL leaderboard and extract the current event name.
+ *
+ * The leaderboard has a "Current Event" label followed by a button whose
+ * text content is the event name (e.g. "VCT 2026 : Masters Santiago").
+ */
+export async function scrapeCurrentEvent(page: Page): Promise<string> {
+  await page.goto('https://www.valorantfantasyleague.net/leaderboard', {
+    waitUntil: 'networkidle',
+    timeout: 30_000,
+  });
+
+  const eventName = await page.evaluate(() => {
+    const labels = [...document.querySelectorAll('label')];
+    const currentEventLabel = labels.find(
+      (l) => l.textContent?.trim().toLowerCase() === 'current event',
+    );
+    if (!currentEventLabel) return null;
+
+    const parent = currentEventLabel.parentElement;
+    if (!parent) return null;
+
+    const button = parent.querySelector('button');
+    return button?.textContent?.trim() ?? null;
+  });
+
+  if (!eventName) {
+    throw new Error('Could not find current event name on leaderboard page');
+  }
+
+  return eventName;
+}
+
+/**
  * Extract team name and GW label from a single already-navigated page.
  */
 async function extractTeamData(page: Page): Promise<{
@@ -81,16 +114,27 @@ async function scrapeTeam(page: Page, team: TeamConfig): Promise<ScrapedTeam> {
   }
 }
 
+export interface ScrapeResult {
+  event: string;
+  teams: ScrapedTeam[];
+}
+
 /**
- * Scrape all teams. Launches a single browser, visits each page sequentially,
- * and returns an array of results.
+ * Scrape all teams. Launches a single browser, visits the leaderboard to
+ * determine the current event, then visits each team page sequentially.
  */
-export async function scrapeAll(teams: TeamConfig[]): Promise<ScrapedTeam[]> {
+export async function scrapeAll(teams: TeamConfig[]): Promise<ScrapeResult> {
   const browser: Browser = await chromium.launch({ headless: true });
   const page: Page = await browser.newPage();
   const results: ScrapedTeam[] = [];
 
   try {
+    // Step 1: Get the current event name from the leaderboard
+    console.log('Fetching current event from leaderboard...');
+    const event = await scrapeCurrentEvent(page);
+    console.log(`Current event: ${event}\n`);
+
+    // Step 2: Scrape each team page
     for (const team of teams) {
       console.log(`Scraping ${team.manager} (${team.url})...`);
       const result = await scrapeTeam(page, team);
@@ -103,9 +147,9 @@ export async function scrapeAll(teams: TeamConfig[]): Promise<ScrapedTeam[]> {
 
       results.push(result);
     }
+
+    return { event, teams: results };
   } finally {
     await browser.close();
   }
-
-  return results;
 }

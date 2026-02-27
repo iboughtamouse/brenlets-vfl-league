@@ -6,8 +6,9 @@
  *   - api/index.ts       (Vercel serverless function)
  *
  * API routes:
- *   GET /api/standings         — standings for the latest game week (or ?gw=N)
- *   GET /api/standings/weeks   — list of available game weeks
+ *   GET /api/standings         — standings for latest event + game week (or ?event=X&gw=N)
+ *   GET /api/standings/weeks   — list of available game weeks for the current event
+ *   GET /api/standings/events  — list of all events
  */
 
 import { Hono } from 'hono';
@@ -58,24 +59,49 @@ function getDb(): VflDatabase {
 // API routes
 // ---------------------------------------------------------------------------
 
-/** List available game weeks (descending). */
-app.get('/api/standings/weeks', async (c) => {
-  const pool = getDb().pool;
-  await getDb().initialize();
+/** List all events. */
+app.get('/api/standings/events', async (c) => {
+  const database = getDb();
+  await database.initialize();
 
-  const result = await pool.query('SELECT DISTINCT game_week FROM scores ORDER BY game_week DESC');
+  const events = await database.getEvents();
+  const latest = await database.getLatestEvent();
 
-  const weeks = result.rows.map((r: { game_week: number }) => r.game_week);
-  const latest = weeks[0] ?? null;
-
-  return c.json({ weeks, latest });
+  return c.json({ events, latest });
 });
 
-/** Get standings for a game week. Defaults to latest. */
+/** List available game weeks for an event (descending). Defaults to latest event. */
+app.get('/api/standings/weeks', async (c) => {
+  const database = getDb();
+  await database.initialize();
+
+  const eventParam = c.req.query('event');
+  const event = eventParam ?? (await database.getLatestEvent());
+
+  if (!event) {
+    return c.json({ event: null, weeks: [], latest: null });
+  }
+
+  const weeks = await database.getGameWeeksForEvent(event);
+  const latest = weeks[0] ?? null;
+
+  return c.json({ event, weeks, latest });
+});
+
+/** Get standings for a game week. Defaults to latest event + latest game week. */
 app.get('/api/standings', async (c) => {
   const database = getDb();
   await database.initialize();
 
+  // Resolve event
+  const eventParam = c.req.query('event');
+  const event = eventParam ?? (await database.getLatestEvent());
+
+  if (!event) {
+    return c.json({ standings: [], event: null, gameWeek: null });
+  }
+
+  // Resolve game week
   const gwParam = c.req.query('gw');
   let gameWeek: number | null;
 
@@ -85,15 +111,15 @@ app.get('/api/standings', async (c) => {
       return c.json({ error: 'Invalid game week parameter' }, 400);
     }
   } else {
-    gameWeek = await database.getLatestGameWeek();
+    gameWeek = await database.getLatestGameWeek(event);
   }
 
   if (gameWeek == null) {
-    return c.json({ standings: [], gameWeek: null });
+    return c.json({ standings: [], event, gameWeek: null });
   }
 
-  const standings = await database.getStandings(gameWeek);
-  return c.json({ standings, gameWeek });
+  const standings = await database.getStandings(event, gameWeek);
+  return c.json({ standings, event, gameWeek });
 });
 
 export { app };

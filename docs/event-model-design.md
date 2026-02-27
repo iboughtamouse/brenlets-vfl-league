@@ -80,8 +80,8 @@ Existing rows get backfilled with "VCT 2026: Kickoff" (the only event scraped so
 
 Proceed with the schema fix + scraper update + simple UI. The critical path is preventing data corruption on the next event transition. UI polish can follow.
 
-## Open Questions
+## Open Questions — Resolved
 
-- **Selector stability:** Need to inspect the `/leaderboard` DOM to find a reliable selector for the current event name. This requires a Playwright visit to confirm.
-- **Event name format:** The leaderboard shows "VCT 2026 : Masters Santiago" (with spaces around the colon). Should we normalize this or store as-is? Storing as-is is safer — no assumptions about format.
-- **Migration timing:** Kickoff data already has `game_week = 1` in the DB with no event. The migration must backfill before Masters Santiago's GW 1 gets scraped, or the old data is lost.
+- **Selector stability:** Confirmed via Playwright inspection. The `/leaderboard` page has a `<label>` with text "Current Event" whose parent `<div>` contains a `<button>` with the event name text. Selector strategy: find label → parent → first button → textContent. Verified working against live VFL.
+- **Event name format:** Store as-is from the VFL leaderboard. No normalization. Current value: `"VCT 2026 : Masters Santiago"`.
+- **Migration timing:** No risk. All existing data is Santiago GW1 (Kickoff is over, no Kickoff data was ever captured). The schema was updated with `CREATE TABLE IF NOT EXISTS` using the new `event` column and `UNIQUE(team_vfl_id, event, game_week)` constraint directly — no ALTER migration needed since we're recreating tables in tests and the production DB will get the new schema on next `initialize()` call.

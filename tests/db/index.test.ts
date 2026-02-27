@@ -5,6 +5,9 @@ import { VflDatabase, extractVflId } from '../../src/db/index.js';
 // Each test gets a clean slate — tables are dropped and recreated.
 const TEST_CONNECTION = process.env.TEST_DATABASE_URL ?? 'postgresql://vfl:vfl@localhost:5432/vfl';
 
+const EVENT = 'VCT 2026 : Masters Santiago';
+const EVENT_2 = 'VCT 2026: Kickoff';
+
 describe('extractVflId', () => {
   it('extracts numeric ID from a standard VFL team URL', () => {
     expect(extractVflId('https://www.valorantfantasyleague.net/team/22832')).toBe(22832);
@@ -101,38 +104,52 @@ describe('VflDatabase', () => {
     });
 
     it('inserts and retrieves a score via standings', async () => {
-      await db.upsertScore(100, 1, 457, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(100, EVENT, 1, 457, '2026-02-26T00:00:00.000Z');
 
-      const standings = await db.getStandings(1);
+      const standings = await db.getStandings(EVENT, 1);
       expect(standings).toHaveLength(1);
       expect(standings[0]).toMatchObject({
         vfl_id: 100,
         manager: 'Seal',
+        event: EVENT,
         game_week: 1,
         points: 457,
       });
     });
 
-    it('updates points on re-upsert for same team + game_week', async () => {
-      await db.upsertScore(100, 1, 100, '2026-02-26T00:00:00.000Z');
-      await db.upsertScore(100, 1, 200, '2026-02-26T01:00:00.000Z');
+    it('updates points on re-upsert for same team + event + game_week', async () => {
+      await db.upsertScore(100, EVENT, 1, 100, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(100, EVENT, 1, 200, '2026-02-26T01:00:00.000Z');
 
-      const standings = await db.getStandings(1);
+      const standings = await db.getStandings(EVENT, 1);
       expect(standings).toHaveLength(1);
       expect(standings[0]!.points).toBe(200);
       expect(standings[0]!.scraped_at).toBe('2026-02-26T01:00:00.000Z');
     });
 
     it('keeps separate rows for different game weeks', async () => {
-      await db.upsertScore(100, 1, 100, '2026-02-26T00:00:00.000Z');
-      await db.upsertScore(100, 2, 250, '2026-03-05T00:00:00.000Z');
+      await db.upsertScore(100, EVENT, 1, 100, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(100, EVENT, 2, 250, '2026-03-05T00:00:00.000Z');
 
-      const history = await db.getTeamHistory(100);
+      const history = await db.getTeamHistory(100, EVENT);
       expect(history).toHaveLength(2);
       expect(history[0]!.game_week).toBe(1);
       expect(history[0]!.points).toBe(100);
       expect(history[1]!.game_week).toBe(2);
       expect(history[1]!.points).toBe(250);
+    });
+
+    it('keeps separate rows for same game week across different events', async () => {
+      await db.upsertScore(100, EVENT, 1, 100, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(100, EVENT_2, 1, 999, '2026-02-26T00:00:00.000Z');
+
+      const standingsEvent1 = await db.getStandings(EVENT, 1);
+      const standingsEvent2 = await db.getStandings(EVENT_2, 1);
+
+      expect(standingsEvent1).toHaveLength(1);
+      expect(standingsEvent1[0]!.points).toBe(100);
+      expect(standingsEvent2).toHaveLength(1);
+      expect(standingsEvent2[0]!.points).toBe(999);
     });
 
     it('returns standings sorted by points descending', async () => {
@@ -144,11 +161,11 @@ describe('VflDatabase', () => {
       );
       await db.upsertTeam(300, 'Bren', 'https://www.valorantfantasyleague.net/team/300', 'LAMBS');
 
-      await db.upsertScore(100, 1, 200, '2026-02-26T00:00:00.000Z');
-      await db.upsertScore(200, 1, 500, '2026-02-26T00:00:00.000Z');
-      await db.upsertScore(300, 1, 350, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(100, EVENT, 1, 200, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(200, EVENT, 1, 500, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(300, EVENT, 1, 350, '2026-02-26T00:00:00.000Z');
 
-      const standings = await db.getStandings(1);
+      const standings = await db.getStandings(EVENT, 1);
       expect(standings.map((s) => s.points)).toEqual([500, 350, 200]);
       expect(standings.map((s) => s.manager)).toEqual(['Alice', 'Bren', 'Seal']);
     });
@@ -160,15 +177,64 @@ describe('VflDatabase', () => {
 
   describe('getLatestGameWeek', () => {
     it('returns null when no scores exist', async () => {
-      expect(await db.getLatestGameWeek()).toBeNull();
+      expect(await db.getLatestGameWeek(EVENT)).toBeNull();
     });
 
-    it('returns the highest game week number', async () => {
+    it('returns the highest game week number for an event', async () => {
       await db.upsertTeam(100, 'Seal', 'https://www.valorantfantasyleague.net/team/100', null);
-      await db.upsertScore(100, 1, 100, '2026-02-26T00:00:00.000Z');
-      await db.upsertScore(100, 3, 300, '2026-03-12T00:00:00.000Z');
+      await db.upsertScore(100, EVENT, 1, 100, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(100, EVENT, 3, 300, '2026-03-12T00:00:00.000Z');
 
-      expect(await db.getLatestGameWeek()).toBe(3);
+      expect(await db.getLatestGameWeek(EVENT)).toBe(3);
+    });
+
+    it('scopes game weeks to the correct event', async () => {
+      await db.upsertTeam(100, 'Seal', 'https://www.valorantfantasyleague.net/team/100', null);
+      await db.upsertScore(100, EVENT, 3, 300, '2026-03-12T00:00:00.000Z');
+      await db.upsertScore(100, EVENT_2, 1, 50, '2026-01-01T00:00:00.000Z');
+
+      expect(await db.getLatestGameWeek(EVENT)).toBe(3);
+      expect(await db.getLatestGameWeek(EVENT_2)).toBe(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // getLatestEvent / getEvents / getGameWeeksForEvent
+  // -------------------------------------------------------------------------
+
+  describe('event queries', () => {
+    beforeEach(async () => {
+      await db.upsertTeam(100, 'Seal', 'https://www.valorantfantasyleague.net/team/100', null);
+    });
+
+    it('getLatestEvent returns null when no scores exist', async () => {
+      expect(await db.getLatestEvent()).toBeNull();
+    });
+
+    it('getLatestEvent returns the most recently inserted event', async () => {
+      await db.upsertScore(100, EVENT_2, 1, 50, '2026-01-01T00:00:00.000Z');
+      await db.upsertScore(100, EVENT, 1, 100, '2026-02-26T00:00:00.000Z');
+
+      expect(await db.getLatestEvent()).toBe(EVENT);
+    });
+
+    it('getEvents returns all distinct events', async () => {
+      await db.upsertScore(100, EVENT, 1, 100, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(100, EVENT_2, 1, 50, '2026-01-01T00:00:00.000Z');
+
+      const events = await db.getEvents();
+      expect(events).toHaveLength(2);
+      expect(events).toContain(EVENT);
+      expect(events).toContain(EVENT_2);
+    });
+
+    it('getGameWeeksForEvent returns weeks descending for an event', async () => {
+      await db.upsertScore(100, EVENT, 1, 100, '2026-02-26T00:00:00.000Z');
+      await db.upsertScore(100, EVENT, 3, 300, '2026-03-12T00:00:00.000Z');
+      await db.upsertScore(100, EVENT_2, 1, 50, '2026-01-01T00:00:00.000Z');
+
+      expect(await db.getGameWeeksForEvent(EVENT)).toEqual([3, 1]);
+      expect(await db.getGameWeeksForEvent(EVENT_2)).toEqual([1]);
     });
   });
 
@@ -206,12 +272,12 @@ describe('VflDatabase', () => {
         },
       ];
 
-      const saved = await db.saveScrapeBatch(results);
+      const saved = await db.saveScrapeBatch(EVENT, results);
 
       expect(saved).toBe(2);
       expect(await db.getTeams()).toHaveLength(2);
 
-      const standings = await db.getStandings(1);
+      const standings = await db.getStandings(EVENT, 1);
       expect(standings).toHaveLength(2);
       expect(standings.map((s) => s.manager)).toEqual(['Seal', 'Bren']); // 457 > 320
     });
@@ -236,13 +302,13 @@ describe('VflDatabase', () => {
         },
       ];
 
-      const saved = await db.saveScrapeBatch(results);
+      const saved = await db.saveScrapeBatch(EVENT, results);
       expect(saved).toBe(0);
     });
 
     it('is atomic — all or nothing on failure', async () => {
       // First, insert a valid batch.
-      await db.saveScrapeBatch([
+      await db.saveScrapeBatch(EVENT, [
         {
           manager: 'Seal',
           url: 'https://www.valorantfantasyleague.net/team/4617',
@@ -275,7 +341,7 @@ describe('VflDatabase', () => {
         },
       ];
 
-      await expect(db.saveScrapeBatch(badBatch)).rejects.toThrow('Cannot extract VFL ID');
+      await expect(db.saveScrapeBatch(EVENT, badBatch)).rejects.toThrow('Cannot extract VFL ID');
 
       // Alice should NOT have been saved (transaction rolled back).
       expect(await db.getTeams()).toHaveLength(1);

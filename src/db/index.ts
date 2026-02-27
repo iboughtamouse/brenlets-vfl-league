@@ -3,7 +3,7 @@
  *
  * Schema:
  *   teams  — one row per VFL team (keyed by the numeric ID from the URL)
- *   scores — one row per team per game week (upserted on re-scrape)
+ *   scores — one row per team per event per game week (upserted on re-scrape)
  *
  * All operations are async. The pool manages connections automatically.
  */
@@ -26,6 +26,7 @@ export interface TeamRow {
 export interface ScoreRow {
   id: number;
   team_vfl_id: number;
+  event: string;
   game_week: number;
   points: number;
   scraped_at: string; // ISO 8601
@@ -36,6 +37,7 @@ export interface StandingsRow {
   manager: string;
   url: string;
   team_name: string | null;
+  event: string;
   game_week: number;
   points: number;
   scraped_at: string;
@@ -56,10 +58,11 @@ const SCHEMA = `
   CREATE TABLE IF NOT EXISTS scores (
     id          SERIAL PRIMARY KEY,
     team_vfl_id INTEGER NOT NULL REFERENCES teams(vfl_id),
+    event       TEXT    NOT NULL,
     game_week   INTEGER NOT NULL,
     points      REAL    NOT NULL,
     scraped_at  TEXT    NOT NULL,
-    UNIQUE(team_vfl_id, game_week)
+    UNIQUE(team_vfl_id, event, game_week)
   );
 `;
 
@@ -82,6 +85,7 @@ export function extractVflId(url: string): number {
 
 export class VflDatabase {
   readonly pool: pg.Pool;
+  private initialized = false;
 
   constructor(connectionString?: string) {
     const connStr =
@@ -90,9 +94,11 @@ export class VflDatabase {
     this.pool = new Pool({ connectionString: connStr });
   }
 
-  /** Run schema migrations. Call once at startup. */
+  /** Run schema migrations. Call once at startup. Idempotent — skips if already run. */
   async initialize(): Promise<void> {
+    if (this.initialized) return;
     await this.pool.query(SCHEMA);
+    this.initialized = true;
   }
 
   // -----------------------------------------------------------------------
@@ -127,50 +133,77 @@ export class VflDatabase {
   // Scores
   // -----------------------------------------------------------------------
 
-  /** Upsert a score — insert or update points/scraped_at for (team, game_week). */
+  /** Upsert a score — insert or update points/scraped_at for (team, event, game_week). */
   async upsertScore(
     teamVflId: number,
+    event: string,
     gameWeek: number,
     points: number,
     scrapedAt: string,
   ): Promise<void> {
     await this.pool.query(
-      `INSERT INTO scores (team_vfl_id, game_week, points, scraped_at)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT(team_vfl_id, game_week) DO UPDATE SET
+      `INSERT INTO scores (team_vfl_id, event, game_week, points, scraped_at)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT(team_vfl_id, event, game_week) DO UPDATE SET
          points     = EXCLUDED.points,
          scraped_at = EXCLUDED.scraped_at`,
-      [teamVflId, gameWeek, points, scrapedAt],
+      [teamVflId, event, gameWeek, points, scrapedAt],
     );
   }
 
-  /** Get all scores for a specific game week, joined with team info. */
-  async getStandings(gameWeek: number): Promise<StandingsRow[]> {
+  /** Get all scores for a specific event + game week, joined with team info. */
+  async getStandings(event: string, gameWeek: number): Promise<StandingsRow[]> {
     const result = await this.pool.query(
       `SELECT t.vfl_id, t.manager, t.url, t.team_name,
-              s.game_week, s.points, s.scraped_at
+              s.event, s.game_week, s.points, s.scraped_at
        FROM scores s
        JOIN teams t ON t.vfl_id = s.team_vfl_id
-       WHERE s.game_week = $1
+       WHERE s.event = $1 AND s.game_week = $2
        ORDER BY s.points DESC`,
-      [gameWeek],
+      [event, gameWeek],
     );
     return result.rows;
   }
 
-  /** Get the latest (highest) game week number, or null if no scores exist. */
-  async getLatestGameWeek(): Promise<number | null> {
-    const result = await this.pool.query('SELECT MAX(game_week) AS gw FROM scores');
+  /** Get the latest event name, or null if no scores exist. */
+  async getLatestEvent(): Promise<string | null> {
+    const result = await this.pool.query(
+      `SELECT event FROM scores ORDER BY scraped_at DESC LIMIT 1`,
+    );
+    return result.rows[0]?.event ?? null;
+  }
+
+  /** Get the latest (highest) game week for a given event, or null if none. */
+  async getLatestGameWeek(event: string): Promise<number | null> {
+    const result = await this.pool.query(
+      'SELECT MAX(game_week) AS gw FROM scores WHERE event = $1',
+      [event],
+    );
     return result.rows[0]?.gw ?? null;
   }
 
-  /** Get all scores for a specific team across all game weeks. */
-  async getTeamHistory(vflId: number): Promise<ScoreRow[]> {
+  /** Get distinct game weeks for an event (descending). */
+  async getGameWeeksForEvent(event: string): Promise<number[]> {
+    const result = await this.pool.query(
+      'SELECT DISTINCT game_week FROM scores WHERE event = $1 ORDER BY game_week DESC',
+      [event],
+    );
+    return result.rows.map((r: { game_week: number }) => r.game_week);
+  }
+
+  /** Get all distinct event names. */
+  async getEvents(): Promise<string[]> {
+    const result = await this.pool.query('SELECT DISTINCT event FROM scores ORDER BY event');
+    return result.rows.map((r: { event: string }) => r.event);
+  }
+
+  /** Get all scores for a specific team within an event. */
+  async getTeamHistory(vflId: number, event: string): Promise<ScoreRow[]> {
     const result = await this.pool.query(
       `SELECT * FROM scores
-       WHERE team_vfl_id = $1
+       WHERE team_vfl_id = $1 AND event = $2
        ORDER BY game_week ASC`,
-      [vflId],
+      [vflId, event],
     );
     return result.rows;
   }
@@ -186,6 +219,7 @@ export class VflDatabase {
    * Returns the count of successfully saved results.
    */
   async saveScrapeBatch(
+    event: string,
     results: Array<{
       manager: string;
       url: string;
@@ -220,12 +254,12 @@ export class VflDatabase {
         );
 
         await client.query(
-          `INSERT INTO scores (team_vfl_id, game_week, points, scraped_at)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT(team_vfl_id, game_week) DO UPDATE SET
+          `INSERT INTO scores (team_vfl_id, event, game_week, points, scraped_at)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT(team_vfl_id, event, game_week) DO UPDATE SET
              points     = EXCLUDED.points,
              scraped_at = EXCLUDED.scraped_at`,
-          [vflId, r.gameWeek, r.points, r.scrapedAt],
+          [vflId, event, r.gameWeek, r.points, r.scrapedAt],
         );
 
         saved++;
