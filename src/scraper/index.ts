@@ -68,9 +68,12 @@ async function extractTeamData(page: Page): Promise<{
   await page.waitForSelector('[data-testid="team-page"]', { timeout: 15_000 });
 
   // Wait for the GW label to hydrate — the page container renders before the
-  // game week data on VFL's Next.js client. Without this, $eval throws on
-  // pages that are slightly slower to hydrate.
-  await page.waitForSelector('[data-testid="team-page"] .text-stone-500', { timeout: 15_000 });
+  // game week data on VFL's Next.js client. The GW label is a .text-2xl child
+  // inside the .text-5xl team name container. Its color class varies by score
+  // (text-stone-500, text-fuchsia-500, text-orange-900, etc.) so we match on
+  // the size class which is consistent.
+  const gwSelector = '[data-testid="team-page"] .text-5xl .text-2xl';
+  await page.waitForSelector(gwSelector, { timeout: 15_000 });
 
   const teamName = await page.$eval('[data-testid="team-page"] .text-5xl', (el) => {
     const clone = el.cloneNode(true) as HTMLElement;
@@ -78,10 +81,7 @@ async function extractTeamData(page: Page): Promise<{
     return clone.textContent?.trim() ?? null;
   });
 
-  const gwLabel = await page.$eval(
-    '[data-testid="team-page"] .text-stone-500',
-    (el) => el.textContent?.trim() ?? null,
-  );
+  const gwLabel = await page.$eval(gwSelector, (el) => el.textContent?.trim() ?? null);
 
   return { teamName, gwLabel };
 }

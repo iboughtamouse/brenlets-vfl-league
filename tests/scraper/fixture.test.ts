@@ -42,7 +42,7 @@ describe('fixture: team-page-22832', () => {
   });
 
   it('extracts the game week label', () => {
-    const el = doc.querySelector('[data-testid="team-page"] .text-stone-500');
+    const el = doc.querySelector('[data-testid="team-page"] .text-5xl .text-2xl');
     expect(el).not.toBeNull();
 
     const gwLabel = el!.textContent?.trim() ?? null;
@@ -50,7 +50,7 @@ describe('fixture: team-page-22832', () => {
   });
 
   it('parses the extracted GW label into structured data', () => {
-    const el = doc.querySelector('[data-testid="team-page"] .text-stone-500');
+    const el = doc.querySelector('[data-testid="team-page"] .text-5xl .text-2xl');
     const gwLabel = el!.textContent?.trim() ?? null;
 
     const parsed = parseGwLabel(gwLabel!);
