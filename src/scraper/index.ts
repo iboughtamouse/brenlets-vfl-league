@@ -67,6 +67,11 @@ async function extractTeamData(page: Page): Promise<{
 }> {
   await page.waitForSelector('[data-testid="team-page"]', { timeout: 15_000 });
 
+  // Wait for the GW label to hydrate — the page container renders before the
+  // game week data on VFL's Next.js client. Without this, $eval throws on
+  // pages that are slightly slower to hydrate.
+  await page.waitForSelector('[data-testid="team-page"] .text-stone-500', { timeout: 15_000 });
+
   const teamName = await page.$eval('[data-testid="team-page"] .text-5xl', (el) => {
     const clone = el.cloneNode(true) as HTMLElement;
     clone.querySelectorAll('*').forEach((child) => child.remove());
