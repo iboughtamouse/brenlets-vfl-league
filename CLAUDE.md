@@ -67,7 +67,7 @@ See `src/web/app.ts` for implementation. All params optional, defaulting to late
 
 1. `scrapeCurrentEvent` visits `/leaderboard`, reads the "Current Event" dropdown → event name
 2. `scrapeAll` iterates `config/teams.json`, visits each team page sequentially
-3. Waits for `[data-testid="team-page"]`, extracts team name (`.text-5xl`) and GW label (`.text-stone-500`)
+3. Waits for `[data-testid="team-page"]`, extracts team name (`.text-5xl`) and GW label (`.text-5xl .text-2xl`)
 4. `parseGwLabel` parses "GW N: X PTS" via regex
 5. `saveScrapeBatch` upserts all teams + scores in a single transaction (atomic — rolls back on any failure)
 

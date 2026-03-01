@@ -29,7 +29,7 @@ Uses Playwright to launch headless Chromium and visit each team page. The VFL si
 **Team scraping:** For each team in `config/teams.json`, the scraper navigates to the team URL, waits for `[data-testid="team-page"]` (15s timeout), then extracts:
 
 - Team name from `.text-5xl` (uses DOM cloning + child removal to isolate the text node)
-- GW label from `.text-stone-500` (e.g. "GW 1: 457 PTS")
+- GW label from `.text-5xl .text-2xl` (e.g. "GW 1: 457 PTS") — the color class varies by score, so we match on size class instead
 
 Teams are scraped sequentially using a single browser instance. One team's failure doesn't stop others — errors are captured and the team is skipped during the batch save.
 

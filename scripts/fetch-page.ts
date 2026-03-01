@@ -4,18 +4,21 @@
  * Inspection script: renders a single VFL team page using Playwright and
  * extracts the team name, game week, and points using confirmed DOM selectors.
  *
- * Confirmed HTML structure (as of 2026-02-26):
+ * Confirmed HTML structure (as of 2026-03-01):
  *
  *   <div data-testid="team-page">
  *     <div class="... text-5xl ...">
  *       TEAM NAME HERE
- *       <div class="... text-stone-500">GW 1: 0 PTS</div>
+ *       <div class="... text-2xl ... text-{color}">GW 1: 0 PTS</div>
  *     </div>
  *   </div>
  *
+ * The GW label's color class varies by score (text-stone-500, text-fuchsia-500,
+ * text-orange-900, etc.), so we match on the size class (.text-2xl) instead.
+ *
  * Selectors:
- *   - Root:     [data-testid="team-page"]     (stable test hook)
- *   - GW label: [data-testid="team-page"] .text-stone-500
+ *   - Root:      [data-testid="team-page"]
+ *   - GW label:  [data-testid="team-page"] .text-5xl .text-2xl
  *   - Team name: first text node of [data-testid="team-page"] .text-5xl
  *
  * Run with: npm run fetch-page
@@ -44,8 +47,9 @@ const teamName = await page.$eval('[data-testid="team-page"] .text-5xl', (el) =>
 });
 
 // Extract GW label: "GW 1: 0 PTS"
+// Color class varies by score, so match on size class (.text-2xl) instead
 const gwLabel = await page.$eval(
-  '[data-testid="team-page"] .text-stone-500',
+  '[data-testid="team-page"] .text-5xl .text-2xl',
   (el) => el.textContent?.trim() ?? null,
 );
 
