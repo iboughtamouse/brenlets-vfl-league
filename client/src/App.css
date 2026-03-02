@@ -97,7 +97,8 @@ body {
 }
 
 .retro-title {
-  font-size: 72px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 56px;
   font-weight: bold;
   background: linear-gradient(
     45deg,
@@ -116,7 +117,7 @@ body {
     6px 6px 10px rgba(255, 0, 255, 0.5);
   animation: gradient-shift 3s ease infinite;
   margin: 20px 0;
-  letter-spacing: 4px;
+  letter-spacing: 2px;
   filter: drop-shadow(0 0 10px #ff00ff);
 }
 
@@ -133,10 +134,11 @@ body {
 }
 
 .subtitle {
-  font-size: 20px;
+  font-family: 'Bangers', cursive;
+  font-size: 26px;
   color: #00ffff;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-  letter-spacing: 3px;
+  letter-spacing: 5px;
   margin: 10px 0 20px 0;
   animation: color-pulse 2s ease-in-out infinite;
 }
@@ -173,8 +175,9 @@ body {
 }
 
 marquee {
-  font-size: 18px;
-  font-weight: bold;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
   color: #000000;
 }
 
@@ -188,10 +191,10 @@ marquee {
 
 /* Event Label */
 .event-label {
+  font-family: 'Righteous', cursive;
   text-align: center;
   margin-bottom: 20px;
-  font-size: 1.4rem;
-  font-weight: bold;
+  font-size: 1.8rem;
   color: #ff6600;
   text-shadow:
     0 0 10px rgba(255, 102, 0, 0.8),
@@ -221,17 +224,17 @@ marquee {
 }
 
 .selector-label {
-  font-size: 24px;
-  font-weight: bold;
+  font-family: 'Righteous', cursive;
+  font-size: 28px;
   color: #ffff00;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-  letter-spacing: 2px;
+  letter-spacing: 3px;
 }
 
 .week-button {
-  font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
-  font-size: 20px;
-  font-weight: bold;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1px;
   padding: 12px 25px;
   background: linear-gradient(180deg, #00ffff 0%, #0088ff 100%);
   border: 4px outset #00ffff;
@@ -265,14 +268,14 @@ marquee {
 }
 
 .table-header-bar {
+  font-family: 'Righteous', cursive;
   background: linear-gradient(90deg, #ff00ff, #00ffff, #ff00ff);
   padding: 15px;
   text-align: center;
-  font-size: 28px;
-  font-weight: bold;
+  font-size: 34px;
   color: #000000;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   border-bottom: 4px solid #ffff00;
 }
 
@@ -286,12 +289,13 @@ marquee {
 }
 
 .standings-table th {
+  font-family: 'Righteous', cursive;
   padding: 15px;
-  font-size: 20px;
+  font-size: 22px;
   color: #ffff00;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
   border: 3px outset #ff00ff;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
 }
 
 .standings-table td {
@@ -435,7 +439,9 @@ marquee {
 }
 
 .stat-box-top .stat-title {
-  font-size: 20px;
+  font-family: 'Bangers', cursive;
+  font-size: 26px;
+  letter-spacing: 3px;
   color: #ffcc00;
   margin-bottom: 10px;
   font-weight: bold;
@@ -454,7 +460,9 @@ marquee {
 }
 
 .stat-box-bottom .stat-title {
-  font-size: 20px;
+  font-family: 'Bangers', cursive;
+  font-size: 26px;
+  letter-spacing: 3px;
   color: #ff4444;
   margin-bottom: 10px;
   font-weight: bold;
@@ -495,11 +503,11 @@ marquee {
 }
 
 .footer-text {
-  font-size: 24px;
-  font-weight: bold;
+  font-family: 'VT323', monospace;
+  font-size: 30px;
   color: #ffff00;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
-  letter-spacing: 2px;
+  letter-spacing: 4px;
 }
 
 .visitor-counter {
@@ -511,14 +519,15 @@ marquee {
 }
 
 .counter-label {
+  font-family: 'VT323', monospace;
   color: #00ff00;
-  font-size: 16px;
+  font-size: 22px;
   margin-right: 10px;
 }
 
 .counter-number {
-  font-family: 'Courier New', monospace;
-  font-size: 28px;
+  font-family: 'VT323', monospace;
+  font-size: 36px;
   font-weight: bold;
   color: #ff0000;
   background: #000000;
@@ -547,8 +556,9 @@ marquee {
 }
 
 .browser-notice {
+  font-family: 'VT323', monospace;
   margin: 20px 0;
-  font-size: 16px;
+  font-size: 22px;
   color: #ffff00;
   font-weight: bold;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
@@ -563,10 +573,11 @@ marquee {
 }
 
 .badge {
+  font-family: 'VT323', monospace;
   background: linear-gradient(180deg, #666666 0%, #333333 100%);
   border: 3px outset #888888;
   padding: 8px 15px;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: bold;
   color: #ffffff;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
@@ -574,8 +585,9 @@ marquee {
 }
 
 .copyright {
+  font-family: 'VT323', monospace;
   margin-top: 20px;
-  font-size: 14px;
+  font-size: 20px;
   color: #888888;
   font-style: italic;
 }
@@ -583,11 +595,11 @@ marquee {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .retro-title {
-    font-size: 42px;
+    font-size: 28px;
   }
 
   .subtitle {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .week-selector {
