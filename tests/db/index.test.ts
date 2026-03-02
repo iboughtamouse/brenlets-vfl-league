@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { VflDatabase, extractVflId } from '../../src/db/index.js';
 
-// Tests run against the local Docker Postgres (vfl-postgres container).
-// Each test gets a clean slate — tables are dropped and recreated.
-const TEST_CONNECTION = process.env.TEST_DATABASE_URL ?? 'postgresql://vfl:vfl@localhost:5432/vfl';
+// Tests run against a dedicated vfl_test database in the local Docker Postgres
+// container. This keeps test runs from wiping dev data. Each test gets a clean
+// slate — tables are dropped and recreated.
+const TEST_CONNECTION =
+  process.env.TEST_DATABASE_URL ?? 'postgresql://vfl:vfl@localhost:5432/vfl_test';
 
 const EVENT = 'VCT 2026 : Masters Santiago';
 const EVENT_2 = 'VCT 2026: Kickoff';
