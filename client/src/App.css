@@ -26,7 +26,7 @@ body {
     ),
     radial-gradient(circle at 20% 50%, rgba(138, 43, 226, 0.2) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(0, 255, 255, 0.2) 0%, transparent 50%);
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
   color: #00ff00;
   position: relative;
   padding: 20px;
@@ -229,7 +229,7 @@ marquee {
 }
 
 .week-button {
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
   font-size: 20px;
   font-weight: bold;
   padding: 12px 25px;
