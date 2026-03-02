@@ -1,6 +1,6 @@
 # Brenlets VFL Hub
 
-Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Scrapes team pages nightly, stores scores in Postgres, and serves a public standings page.
+Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Scrapes team pages hourly during match hours, stores scores in Postgres, and serves a public standings page.
 
 **Live at:** [brenlets-vfl-league.vercel.app](https://brenlets-vfl-league.vercel.app/)
 
@@ -85,7 +85,7 @@ npm run format        # Prettier
 
 - **Conventional Commits** enforced by commitlint + Husky (`commit-msg` hook)
 - **Prettier + ESLint** run automatically on pre-commit hook — don't document style rules, the tools enforce them
-- **GitHub Actions** runs the scraper nightly and on push to `config/teams.json`
+- **GitHub Actions** runs the scraper hourly during match hours (7PM–10AM Eastern) and on push to `config/teams.json`
 
 ## Testing Strategy
 

@@ -56,7 +56,7 @@ The DB is lazily initialized via a module-level `getDb()` function. A global err
 
 GitHub Actions workflow (`.github/workflows/scrape.yml`) with three triggers:
 
-- **Schedule:** Daily at 10:00 UTC
+- **Schedule:** Hourly from 23:00–15:00 UTC (7PM–10AM Eastern, covers both EST and EDT)
 - **Push:** When `config/teams.json` changes
 - **Manual:** `workflow_dispatch` from the GitHub Actions UI
 
