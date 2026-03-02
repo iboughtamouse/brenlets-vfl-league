@@ -24,7 +24,7 @@ Detailed architecture, stack decisions, and design rationale for the Brenlets VF
 
 Uses Playwright to launch headless Chromium and visit each team page. The VFL site is a Next.js app that renders all team data client-side — a plain HTTP GET returns only a loading placeholder.
 
-**Event detection:** Before scraping team pages, the scraper visits `/leaderboard` and reads the "Current Event" dropdown. The selector strategy: find `<label>` with text "Current Event" → parent `<div>` → first `<button>` → textContent. This determines which VFL event (e.g. "VCT 2026 : Masters Santiago") the scores belong to.
+**Event detection:** Before scraping team pages, the scraper visits `/leaderboard` and reads the "Current Event" dropdown. The selector strategy: find `<label>` with text "Current Event" → parent `<div>` → first `<button>` → textContent. The raw name is then normalized by `normalizeEventName` (strips trailing ": Week N" suffixes that VFL appends once matches begin). This ensures a stable event identifier across the entire event — the game week is already captured separately from each team page.
 
 **Team scraping:** For each team in `config/teams.json`, the scraper navigates to the team URL, waits for `[data-testid="team-page"]` (15s timeout), then extracts:
 
@@ -74,7 +74,7 @@ The workflow installs Playwright Chromium, runs the scraper, and writes directly
 
 **Fixture-based scraper tests** over snapshot tests. VFL pages contain too much noise (scripts, ads, player rosters, Next.js hydration data) for snapshots to be useful — they'd trip on every irrelevant change and train us to ignore them. Instead, a saved HTML fixture (`fixtures/team-page-22832.html`) is loaded into happy-dom and tested with explicit assertions against the specific selectors the scraper uses. When VFL changes their markup, the test fails and shows exactly which field broke.
 
-**DB integration tests** run against a real local Postgres instance (Docker). Each test drops and recreates tables for a clean slate. Tests cover upsert semantics, transaction rollback, standings ordering, event isolation, and batch save edge cases.
+**DB integration tests** run against a dedicated `vfl_test` database in the local Docker Postgres container, isolated from dev data. Each test drops and recreates tables for a clean slate. Tests cover upsert semantics, transaction rollback, standings ordering, event isolation, and batch save edge cases.
 
 **No E2E browser tests for v1.** The web app is a thin read-only layer over the database — the risk is in the scraper and data layer, which are well-tested.
 

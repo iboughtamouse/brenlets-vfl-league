@@ -6,7 +6,7 @@ Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyle
 
 ## How It Works
 
-VFL is a Next.js app — team data is rendered client-side. A Playwright-based scraper visits each team page, waits for the JavaScript to render, and reads the team name, game week, and points from the DOM. Results are saved to Postgres with upsert semantics (re-scraping the same game week updates rather than duplicates; all distinct game weeks are preserved).
+VFL is a Next.js app — team data is rendered client-side. A Playwright-based scraper visits each team page, waits for the JavaScript to render, and reads the team name, game week, and points from the DOM. Results are saved to Postgres with upsert semantics (re-scraping the same event + game week updates rather than duplicates; all distinct event/game week combinations are preserved for history).
 
 The scraper runs nightly via GitHub Actions and writes directly to Railway Postgres. The web app (Hono + React on Vercel) reads from the same database and serves the standings page.
 
@@ -24,7 +24,7 @@ The scraper runs nightly via GitHub Actions and writes directly to Railway Postg
 
 ```
 config/teams.json       — League roster (manager name + VFL URL)
-src/scraper/parser.ts   — Pure parsing function for GW labels
+src/scraper/parser.ts   — Pure parsing functions (GW labels + event name normalization)
 src/scraper/index.ts    — Playwright scraper (visits pages, extracts data)
 src/db/index.ts         — Postgres database layer (schema, queries, batch save)
 src/web/app.ts          — Hono app with API routes (shared by dev + Vercel)

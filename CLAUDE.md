@@ -32,7 +32,7 @@ VFL is a Next.js app — all team data is rendered client-side. Playwright runs 
 
 ```
 config/teams.json         — League roster (manager name + VFL URL)
-src/scraper/parser.ts     — parseGwLabel regex parser (pure function)
+src/scraper/parser.ts     — parseGwLabel + normalizeEventName (pure functions)
 src/scraper/index.ts      — Playwright scraper (scrapeAll, scrapeCurrentEvent, extractTeamData)
 src/db/index.ts           — VflDatabase class (schema, queries, batch save)
 src/web/app.ts            — Hono API routes (shared by dev server + Vercel)
@@ -65,7 +65,7 @@ See `src/web/app.ts` for implementation. All params optional, defaulting to late
 
 ## Scraping Flow
 
-1. `scrapeCurrentEvent` visits `/leaderboard`, reads the "Current Event" dropdown → event name
+1. `scrapeCurrentEvent` visits `/leaderboard`, reads the "Current Event" dropdown → event name. `normalizeEventName` strips trailing ": Week N" suffixes (VFL appends these once matches begin; we store the base event name only).
 2. `scrapeAll` iterates `config/teams.json`, visits each team page sequentially
 3. Waits for `[data-testid="team-page"]`, extracts team name (`.text-5xl`) and GW label (`.text-5xl .text-2xl`)
 4. `parseGwLabel` parses "GW N: X PTS" via regex
@@ -89,9 +89,9 @@ npm run format        # Prettier
 
 ## Testing Strategy
 
-- **Parser unit tests** (`tests/scraper/parser.test.ts`) — regex edge cases
+- **Parser unit tests** (`tests/scraper/parser.test.ts`) — regex edge cases for GW labels and event name normalization
 - **Fixture-based DOM tests** (`tests/scraper/fixture.test.ts`) — scraper selectors against saved HTML from a real VFL page. When VFL changes their markup, this test breaks and shows exactly what changed.
-- **DB integration tests** (`tests/db/index.test.ts`) — runs against a real local Postgres instance. Tests upsert semantics, transactions, standings queries.
+- **DB integration tests** (`tests/db/index.test.ts`) — runs against a dedicated `vfl_test` database in the local Docker Postgres container, isolated from dev data. Tests upsert semantics, transactions, standings queries.
 - No snapshot tests (evaluated and rejected — see `docs/architecture.md`)
 - No E2E browser tests for v1
 
