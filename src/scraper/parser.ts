@@ -26,3 +26,16 @@ export function parseGwLabel(label: string): GwLabelResult | null {
     points: parseFloat(match[2]),
   };
 }
+
+/**
+ * Strip the trailing ": Week N" suffix that VFL appends to event names
+ * once matches begin. We store the base event name only — the game week
+ * is already captured separately from the team page's GW label.
+ *
+ * Examples:
+ *   "VCT 2026 : Masters Santiago: Week 1"  → "VCT 2026 : Masters Santiago"
+ *   "VCT 2026 : Masters Santiago"           → "VCT 2026 : Masters Santiago"
+ */
+export function normalizeEventName(raw: string): string {
+  return raw.replace(/:\s*Week\s*\d+\s*$/i, '').trim();
+}

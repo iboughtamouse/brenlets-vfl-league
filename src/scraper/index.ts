@@ -8,7 +8,7 @@
  */
 
 import { chromium, type Browser, type Page } from '@playwright/test';
-import { parseGwLabel, type GwLabelResult } from './parser.js';
+import { parseGwLabel, normalizeEventName, type GwLabelResult } from './parser.js';
 
 export interface TeamConfig {
   manager: string;
@@ -55,7 +55,7 @@ export async function scrapeCurrentEvent(page: Page): Promise<string> {
     throw new Error('Could not find current event name on leaderboard page');
   }
 
-  return eventName;
+  return normalizeEventName(eventName);
 }
 
 /**

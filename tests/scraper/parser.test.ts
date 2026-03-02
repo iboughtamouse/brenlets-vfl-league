@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseGwLabel } from '../../src/scraper/parser.js';
+import { parseGwLabel, normalizeEventName } from '../../src/scraper/parser.js';
 
 describe('parseGwLabel', () => {
   it('parses a standard game week label', () => {
@@ -53,5 +53,35 @@ describe('parseGwLabel', () => {
 
   it('returns null for a partial match', () => {
     expect(parseGwLabel('GW 1:')).toBeNull();
+  });
+});
+
+describe('normalizeEventName', () => {
+  it('strips ": Week N" suffix', () => {
+    expect(normalizeEventName('VCT 2026 : Masters Santiago: Week 1')).toBe(
+      'VCT 2026 : Masters Santiago',
+    );
+  });
+
+  it('strips higher week numbers', () => {
+    expect(normalizeEventName('VCT 2026 : Masters Santiago: Week 12')).toBe(
+      'VCT 2026 : Masters Santiago',
+    );
+  });
+
+  it('leaves bare event names unchanged', () => {
+    expect(normalizeEventName('VCT 2026 : Masters Santiago')).toBe('VCT 2026 : Masters Santiago');
+  });
+
+  it('is case-insensitive for the Week suffix', () => {
+    expect(normalizeEventName('Some Event: week 3')).toBe('Some Event');
+  });
+
+  it('handles extra whitespace around the suffix', () => {
+    expect(normalizeEventName('Some Event:  Week  5  ')).toBe('Some Event');
+  });
+
+  it('does not strip Week from the middle of a name', () => {
+    expect(normalizeEventName('Week 1 Finals: Grand Stage')).toBe('Week 1 Finals: Grand Stage');
   });
 });
