@@ -1,6 +1,6 @@
 # Brenlets VFL Hub
 
-Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Scrapes team pages hourly during match hours, stores scores in Postgres, and serves a public standings page.
+Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Scrapes team pages on a schedule after matches conclude, stores scores in Postgres, and serves a public standings page.
 
 **Live at:** [brenlets-vfl-league.vercel.app](https://brenlets-vfl-league.vercel.app/)
 
@@ -8,7 +8,7 @@ Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyle
 
 VFL is a Next.js app — team data is rendered client-side. A Playwright-based scraper visits each team page, waits for the JavaScript to render, and reads the team name, game week, and points from the DOM. Results are saved to Postgres with upsert semantics (re-scraping the same event + game week updates rather than duplicates; all distinct event/game week combinations are preserved for history).
 
-The scraper runs hourly (during match hours) via GitHub Actions and writes directly to Railway Postgres. The web app (Hono + React on Vercel) reads from the same database and serves the standings page.
+The scraper runs hourly (after matches conclude, through the night) via GitHub Actions and writes directly to Railway Postgres. The web app (Hono + Preact on Vercel) reads from the same database and serves the standings page.
 
 ## Architecture
 
@@ -30,7 +30,7 @@ src/db/index.ts         — Postgres database layer (schema, queries, batch save
 src/web/app.ts          — Hono app with API routes (shared by dev + Vercel)
 src/web/server.ts       — Local dev server (@hono/node-server + static files)
 api/index.ts            — Vercel serverless entry point
-client/                 — React frontend (Vite)
+client/                 — Preact frontend (Vite)
 scripts/scrape-all.ts   — CLI entry point: scrape all teams → save to DB
 fixtures/               — Saved HTML fixture for testing
 tests/                  — Vitest unit + integration tests
@@ -65,6 +65,6 @@ npm run format
 
 ## Status
 
-The app is live and updating automatically. Scraper runs hourly during match hours via GitHub Actions, data is stored in Railway Postgres, and the standings page is served from Vercel.
+The app is live and updating automatically. Scraper runs hourly after matches conclude via GitHub Actions, data is stored in Railway Postgres, and the standings page is served from Vercel.
 
 **For AI agents:** Start with [CLAUDE.md](CLAUDE.md). For architecture details, see [docs/architecture.md](docs/architecture.md).

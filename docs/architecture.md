@@ -6,15 +6,15 @@ Detailed architecture, stack decisions, and design rationale for the Brenlets VF
 
 ## Stack Decisions
 
-| Layer    | Decision                                       | Rationale                                                                                                                              |
-| -------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Language | TypeScript throughout                          | Type safety, modern tooling                                                                                                            |
-| Scraper  | Node.js + Playwright (headless Chromium)       | VFL renders client-side; plain HTTP returns "Loading team data..."                                                                     |
-| Database | Postgres on Railway                            | Vercel serverless has no persistent disk — SQLite can't work in production                                                             |
-| Web App  | Hono (server/API) + React (frontend) on Vercel | Hono is Web Standards-compatible (works in both Node.js and serverless). React supports week-over-week navigation without page reload. |
-| Cron     | GitHub Actions scheduled workflow              | No separate infrastructure needed, integrates with the repo                                                                            |
+| Layer    | Decision                                        | Rationale                                                                                                                               |
+| -------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Language | TypeScript throughout                           | Type safety, modern tooling                                                                                                             |
+| Scraper  | Node.js + Playwright (headless Chromium)        | VFL renders client-side; plain HTTP returns "Loading team data..."                                                                      |
+| Database | Postgres on Railway                             | Vercel serverless has no persistent disk — SQLite can't work in production                                                              |
+| Web App  | Hono (server/API) + Preact (frontend) on Vercel | Hono is Web Standards-compatible (works in both Node.js and serverless). Preact supports week-over-week navigation without page reload. |
+| Cron     | GitHub Actions scheduled workflow               | No separate infrastructure needed, integrates with the repo                                                                             |
 
-**What changed during development:** Cheerio was the original choice for scraping but was replaced by Playwright when we discovered VFL requires JavaScript rendering. SQLite was initially chosen for simplicity but replaced by Postgres — Vercel's serverless model has no persistent disk. Express was considered but Hono was chosen for Web Standards compatibility. Plain HTML was considered for the frontend but React was chosen to support game week navigation.
+**What changed during development:** Cheerio was the original choice for scraping but was replaced by Playwright when we discovered VFL requires JavaScript rendering. SQLite was initially chosen for simplicity but replaced by Postgres — Vercel's serverless model has no persistent disk. Express was considered but Hono was chosen for Web Standards compatibility. Plain HTML was considered for the frontend but React was chosen to support game week navigation — later migrated to Preact for a smaller bundle (~3KB vs ~45KB gzipped) with an identical API.
 
 ---
 
@@ -47,7 +47,7 @@ Postgres on Railway, accessed via `node-postgres` (`pg`). The `VflDatabase` clas
 
 The Hono app definition (`src/web/app.ts`) is separated from the server entry point. This lets the same app be used by:
 
-- `src/web/server.ts` — local dev via `@hono/node-server`, also serves static React build
+- `src/web/server.ts` — local dev via `@hono/node-server`, also serves static Preact build
 - `api/index.ts` — Vercel serverless function (single re-export)
 
 The DB is lazily initialized via a module-level `getDb()` function. A global error handler (`app.onError`) catches unhandled errors, logs them, and returns a generic 500 to the client.
@@ -56,7 +56,7 @@ The DB is lazily initialized via a module-level `getDb()` function. A global err
 
 GitHub Actions workflow (`.github/workflows/scrape.yml`) with three triggers:
 
-- **Schedule:** Hourly from 23:00–15:00 UTC (7PM–10AM Eastern, covers both EST and EDT)
+- **Schedule:** Hourly from 23:00–15:00 UTC (7PM–10AM Eastern, covers both EST and EDT). Matches run ~12PM–7PM Eastern; the schedule starts after the last match concludes and runs through the night to capture final scores.
 - **Push:** When `config/teams.json` changes
 - **Manual:** `workflow_dispatch` from the GitHub Actions UI
 

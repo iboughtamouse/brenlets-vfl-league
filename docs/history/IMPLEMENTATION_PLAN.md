@@ -49,12 +49,12 @@ Swap SQLite for Postgres. The web app deploys to Vercel (serverless — no persi
 Serve standings data through a web UI. Prove the full read path: Postgres → API → browser.
 
 - [x] Choose web framework → Hono
-- [x] Choose frontend approach → React (via Vite)
+- [x] Choose frontend approach → React (via Vite) → later migrated to Preact
 - [x] Install dependencies (Hono, @hono/node-server)
 - [x] Build Hono server with API routes (`/api/standings`, `/api/standings/weeks`)
-- [x] Set up Vite for React client build
+- [x] Set up Vite for client build
 - [x] Build standings table component (fetches from API, renders table)
-- [x] Wire Hono to serve the built React app
+- [x] Wire Hono to serve the built client app
 - [x] Add `dev` scripts for both server and client
 - [x] Verify end-to-end: real scraped data renders in browser
 
@@ -83,7 +83,7 @@ Automate the scraper so standings update without manual intervention.
 
 Deploy the web app and make it reliable enough to run unattended.
 
-- [x] Deploy Hono + React app to Vercel
+- [x] Deploy Hono + Preact app to Vercel
 - [x] Provision Postgres on Railway, configure connection string
 - [x] Add global error handling to the Hono server (`app.onError`)
 - [ ] Refactor server to accept injected DB (factory function) for testability

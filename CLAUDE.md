@@ -1,6 +1,6 @@
 # Brenlets VFL Hub
 
-Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Scrapes team pages hourly during match hours, stores scores in Postgres, and serves a public standings page.
+Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Scrapes team pages on a schedule after matches conclude, stores scores in Postgres, and serves a public standings page.
 
 **Live at:** [brenlets-vfl-league.vercel.app](https://brenlets-vfl-league.vercel.app/)
 
@@ -24,7 +24,7 @@ This project is **AI-driven, human-assisted**: AI agents write all code, documen
 
 - **Scraper** runs in GitHub Actions on a schedule. Writes directly to Railway Postgres.
 - **Database** is Postgres on Railway. Accessible from both GitHub Actions and Vercel.
-- **Web app** is Hono (API) + React (frontend) on Vercel. Reads from Postgres.
+- **Web app** is Hono (API) + Preact (frontend) on Vercel. Reads from Postgres.
 
 VFL is a Next.js app — all team data is rendered client-side. Playwright runs headless Chromium, waits for the page to render, then reads the DOM. No authentication required.
 
@@ -38,7 +38,7 @@ src/db/index.ts           — VflDatabase class (schema, queries, batch save)
 src/web/app.ts            — Hono API routes (shared by dev server + Vercel)
 src/web/server.ts         — Local dev server (@hono/node-server + static files)
 api/index.ts              — Vercel serverless entry point (re-exports Hono app)
-client/src/App.tsx        — React frontend (single component, retro GeoCities aesthetic)
+client/src/App.tsx        — Preact frontend (single component, retro GeoCities aesthetic)
 scripts/scrape-all.ts     — CLI entry: scrape all teams → save to DB
 fixtures/                 — Saved HTML fixture for testing
 tests/                    — Vitest unit + integration tests
@@ -85,7 +85,7 @@ npm run format        # Prettier
 
 - **Conventional Commits** enforced by commitlint + Husky (`commit-msg` hook)
 - **Prettier + ESLint** run automatically on pre-commit hook — don't document style rules, the tools enforce them
-- **GitHub Actions** runs the scraper hourly during match hours (7PM–10AM Eastern) and on push to `config/teams.json`
+- **GitHub Actions** runs the scraper hourly from 7PM–10AM Eastern (after matches conclude) and on push to `config/teams.json`
 
 ## Testing Strategy
 
