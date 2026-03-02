@@ -2,9 +2,10 @@ name: Scrape VFL Standings
 
 on:
   schedule:
-    # Every day at 10:00 UTC — safe to run daily since upsert
-    # semantics mean re-scraping the same game week just updates the row.
-    - cron: '0 10 * * *'
+    # Hourly from 23:00–15:00 UTC (7PM–10AM Eastern, covers both EST and EDT).
+    # Matches finish by ~7PM ET; VFL updates shortly after. Upsert semantics
+    # mean re-scraping the same game week just updates the row.
+    - cron: '0 23,0-15 * * *'
   push:
     paths:
       - 'config/teams.json'
