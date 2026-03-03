@@ -21,7 +21,7 @@ At the end of a game week, standings are already updated. The commissioner can o
 
 ## Data Freshness
 
-Scores update hourly after matches conclude via an automated job. Since VFL game weeks don't change by the minute, hourly is sufficient. An on-demand "refresh now" trigger would be a nice-to-have for after game weeks officially close.
+Scores update every 15 minutes after matches conclude via an automated job. Since VFL game weeks don't change by the minute, hourly is sufficient. An on-demand "refresh now" trigger would be a nice-to-have for after game weeks officially close.
 
 ## What the Site Looks Like (Roughly)
 

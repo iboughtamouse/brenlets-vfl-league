@@ -85,7 +85,7 @@ npm run format        # Prettier
 
 - **Conventional Commits** enforced by commitlint + Husky (`commit-msg` hook)
 - **Prettier + ESLint** run automatically on pre-commit hook — don't document style rules, the tools enforce them
-- **GitHub Actions** runs the scraper hourly from 7PM–10AM Eastern (after matches conclude) and on push to `config/teams.json`
+- **GitHub Actions** runs the scraper every 15 minutes from 6PM–10PM Eastern (after matches conclude) and on push to `config/teams.json`
 
 ## Testing Strategy
 

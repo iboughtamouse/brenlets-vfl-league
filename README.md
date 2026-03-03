@@ -8,7 +8,7 @@ Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyle
 
 VFL is a Next.js app — team data is rendered client-side. A Playwright-based scraper visits each team page, waits for the JavaScript to render, and reads the team name, game week, and points from the DOM. Results are saved to Postgres with upsert semantics (re-scraping the same event + game week updates rather than duplicates; all distinct event/game week combinations are preserved for history).
 
-The scraper runs hourly (after matches conclude, through the night) via GitHub Actions and writes directly to Railway Postgres. The web app (Hono + Preact on Vercel) reads from the same database and serves the standings page.
+The scraper runs every 15 minutes (6PM–10PM Eastern, after matches conclude) via GitHub Actions and writes directly to Railway Postgres. The web app (Hono + Preact on Vercel) reads from the same database and serves the standings page.
 
 ## Architecture
 
@@ -65,6 +65,6 @@ npm run format
 
 ## Status
 
-The app is live and updating automatically. Scraper runs hourly after matches conclude via GitHub Actions, data is stored in Railway Postgres, and the standings page is served from Vercel.
+The app is live and updating automatically. Scraper runs every 15 minutes after matches conclude via GitHub Actions, data is stored in Railway Postgres, and the standings page is served from Vercel.
 
 **For AI agents:** Start with [CLAUDE.md](CLAUDE.md). For architecture details, see [docs/architecture.md](docs/architecture.md).

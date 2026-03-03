@@ -56,7 +56,7 @@ The DB is lazily initialized via a module-level `getDb()` function. A global err
 
 GitHub Actions workflow (`.github/workflows/scrape.yml`) with three triggers:
 
-- **Schedule:** Hourly from 23:00–15:00 UTC (7PM–10AM Eastern, covers both EST and EDT). Matches run ~12PM–7PM Eastern; the schedule starts after the last match concludes and runs through the night to capture final scores.
+- **Schedule:** Every 15 minutes from 22:00–03:00 UTC (6PM–10PM Eastern, covers both EST and EDT). Matches end by ~7PM ET; frequent runs catch scores as soon as VFL updates.
 - **Push:** When `config/teams.json` changes
 - **Manual:** `workflow_dispatch` from the GitHub Actions UI
 
