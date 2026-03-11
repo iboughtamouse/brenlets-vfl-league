@@ -22,6 +22,10 @@ describe('extractVflId', () => {
   it('throws on URL without team ID', () => {
     expect(() => extractVflId('https://example.com/nope')).toThrow('Cannot extract VFL ID');
   });
+
+  it('throws on empty string', () => {
+    expect(() => extractVflId('')).toThrow('Cannot extract VFL ID');
+  });
 });
 
 describe('VflDatabase', () => {

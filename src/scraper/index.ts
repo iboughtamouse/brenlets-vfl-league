@@ -9,6 +9,8 @@
 
 const API_BASE = 'https://api.valorantfantasyleague.net/api';
 
+import { extractVflId } from '../db/index.js';
+
 // ---------------------------------------------------------------------------
 // Types — shaped from the actual API responses
 // ---------------------------------------------------------------------------
@@ -93,13 +95,6 @@ async function fetchTeamScore(
 // Core logic
 // ---------------------------------------------------------------------------
 
-/** Extract the numeric user ID from a VFL team URL like ".../team/22832". */
-export function extractUserId(url: string): number {
-  const match = url.match(/\/team\/(\d+)/);
-  if (!match) throw new Error(`Cannot extract user ID from URL: ${url}`);
-  return Number(match[1]);
-}
-
 /**
  * Determine which gameweeks have at least one match with points assigned.
  * These are the gameweeks we should write scores for.
@@ -131,7 +126,7 @@ export async function fetchAll(teams: TeamConfig[]): Promise<FetchResult> {
   for (const gw of gws) {
     console.log(`--- GW${gw} ---`);
     for (const team of teams) {
-      const userId = extractUserId(team.url);
+      const userId = extractVflId(team.url);
       try {
         const data = await fetchTeamScore(userId, event.id, gw);
         results.push({

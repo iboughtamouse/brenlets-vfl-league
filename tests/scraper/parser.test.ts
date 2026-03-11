@@ -1,25 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractUserId, scoreableGameweeks, type CurrentEvent } from '../../src/scraper/index.js';
-
-describe('extractUserId', () => {
-  it('extracts numeric ID from a standard team URL', () => {
-    expect(extractUserId('https://www.valorantfantasyleague.net/team/22832')).toBe(22832);
-  });
-
-  it('extracts from a URL with trailing slash', () => {
-    expect(extractUserId('https://www.valorantfantasyleague.net/team/164/')).toBe(164);
-  });
-
-  it('throws for a URL without a team ID', () => {
-    expect(() => extractUserId('https://www.valorantfantasyleague.net/leaderboard')).toThrow(
-      'Cannot extract user ID',
-    );
-  });
-
-  it('throws for an empty string', () => {
-    expect(() => extractUserId('')).toThrow('Cannot extract user ID');
-  });
-});
+import { scoreableGameweeks, type CurrentEvent } from '../../src/scraper/index.js';
 
 describe('scoreableGameweeks', () => {
   const makeEvent = (matches: { gameweek: number; havePointsBeenAssigned: boolean }[]) =>
