@@ -1,23 +1,23 @@
 /**
  * scrape-all.ts
  *
- * Runs the scraper against all teams in config/teams.json, prints
- * the results, and saves them to the Postgres database.
+ * Fetches scores for all teams in config/teams.json from the VFL API
+ * and saves them to the Postgres database.
  *
  * Run with: npm run scrape
  */
 
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { scrapeAll, type TeamConfig } from '../src/scraper/index.js';
+import { fetchAll, type TeamConfig } from '../src/scraper/index.js';
 import { VflDatabase } from '../src/db/index.js';
 
 const teamsPath = resolve(import.meta.dirname, '..', 'config', 'teams.json');
 const teams: TeamConfig[] = JSON.parse(await readFile(teamsPath, 'utf-8'));
 
-console.log(`\nScraping ${teams.length} teams...\n`);
+console.log(`\nFetching ${teams.length} teams...\n`);
 
-const { event, teams: results } = await scrapeAll(teams);
+const { event, teams: results } = await fetchAll(teams);
 
 const succeeded = results.filter((r) => !r.error).length;
 const failed = results.filter((r) => r.error).length;

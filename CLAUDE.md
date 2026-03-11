@@ -1,6 +1,6 @@
 # Brenlets VFL Hub
 
-Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Scrapes team pages on a schedule after matches conclude, stores scores in Postgres, and serves a public standings page.
+Automated standings tracker for the [Brenlets VFL](https://www.valorantfantasyleague.net/) fantasy Valorant league. Fetches scores from the VFL JSON API on a schedule after matches conclude, stores them in Postgres, and serves a public standings page.
 
 **Live at:** [brenlets-vfl-league.vercel.app](https://brenlets-vfl-league.vercel.app/)
 
@@ -15,34 +15,35 @@ This project is **AI-driven, human-assisted**: AI agents write all code, documen
 ## Architecture
 
 ```
-[ valorantfantasyleague.net ]
+[ api.valorantfantasyleague.net ]
         |
-        | Playwright (headless Chromium, scheduled via GitHub Actions)
+        | JSON API (scheduled via GitHub Actions)
         v
-[ Scraper (GitHub Actions) ] --> [ Postgres (Railway) ] <-- [ Web App (Vercel) ] --> [ Browser ]
+[ Fetcher (GitHub Actions) ] --> [ Postgres (Railway) ] <-- [ Web App (Vercel) ] --> [ Browser ]
 ```
 
-- **Scraper** runs in GitHub Actions on a schedule. Writes directly to Railway Postgres.
+- **Fetcher** runs in GitHub Actions on a schedule. Calls VFL's JSON API and writes to Railway Postgres.
 - **Database** is Postgres on Railway. Accessible from both GitHub Actions and Vercel.
 - **Web app** is Hono (API) + Preact (frontend) on Vercel. Reads from Postgres.
 
-VFL is a Next.js app — all team data is rendered client-side. Playwright runs headless Chromium, waits for the page to render, then reads the DOM. No authentication required.
+VFL exposes a public JSON API. Two key endpoints:
+
+- `GET /api/event/currentevent` — event metadata, gameweek periods, match completion status
+- `GET /api/fantasyteam/team?userId=N&eventId=N&gameweek=N` — individual team scores
 
 ## Key Files
 
 ```
 config/teams.json         — League roster (manager name + VFL URL)
-src/scraper/parser.ts     — parseGwLabel + normalizeEventName (pure functions)
-src/scraper/index.ts      — Playwright scraper (scrapeAll, scrapeCurrentEvent, extractTeamData)
+src/scraper/index.ts      — VFL API client (fetchAll, fetchCurrentEvent, scoreableGameweeks)
 src/db/index.ts           — VflDatabase class (schema, queries, batch save)
 src/web/app.ts            — Hono API routes (shared by dev server + Vercel)
 src/web/server.ts         — Local dev server (@hono/node-server + static files)
 api/index.ts              — Vercel serverless entry point (re-exports Hono app)
 client/src/App.tsx        — Preact frontend (single component, retro GeoCities aesthetic)
-scripts/scrape-all.ts     — CLI entry: scrape all teams → save to DB
-fixtures/                 — Saved HTML fixture for testing
+scripts/scrape-all.ts     — CLI entry: fetch all teams → save to DB
 tests/                    — Vitest unit + integration tests
-.github/workflows/        — GitHub Actions (scheduled scraping)
+.github/workflows/        — GitHub Actions (scheduled fetching)
 ```
 
 ## Data Model
@@ -63,13 +64,12 @@ See `src/web/app.ts` for implementation. All params optional, defaulting to late
 - `GET /api/standings/weeks?event=X` — game weeks for an event (descending)
 - `GET /api/standings?event=X&gw=N` — standings for an event + game week
 
-## Scraping Flow
+## Fetching Flow
 
-1. `scrapeCurrentEvent` visits `/leaderboard`, reads the "Current Event" dropdown → event name. `normalizeEventName` strips trailing ": Week N" suffixes (VFL appends these once matches begin; we store the base event name only).
-2. `scrapeAll` iterates `config/teams.json`, visits each team page sequentially
-3. Waits for `[data-testid="team-page"]`, extracts team name (`.text-5xl`) and GW label (`.text-5xl .text-2xl`)
-4. `parseGwLabel` parses "GW N: X PTS" via regex
-5. `saveScrapeBatch` upserts all teams + scores in a single transaction (atomic — rolls back on any failure)
+1. `fetchCurrentEvent()` calls `/api/event/currentevent` → event metadata including matches with `havePointsBeenAssigned` flags
+2. `scoreableGameweeks(event)` filters to gameweeks where at least one match has points assigned (prevents writing 0-point rows for unplayed GWs)
+3. `fetchAll(teams)` iterates all scoreable GWs × all teams from `config/teams.json`, calling `/api/fantasyteam/team` for each
+4. `saveScrapeBatch` upserts all teams + scores in a single transaction (atomic — rolls back on any failure)
 
 ## Commands
 
@@ -85,15 +85,13 @@ npm run format        # Prettier
 
 - **Conventional Commits** enforced by commitlint + Husky (`commit-msg` hook)
 - **Prettier + ESLint** run automatically on pre-commit hook — don't document style rules, the tools enforce them
-- **GitHub Actions** runs the scraper every 15 minutes from 6PM–10PM Eastern (after matches conclude) and on push to `config/teams.json`
+- **GitHub Actions** runs the fetcher every 15 minutes from 6PM–10PM Eastern (after matches conclude) and on push to `config/teams.json`
 
 ## Testing Strategy
 
-- **Parser unit tests** (`tests/scraper/parser.test.ts`) — regex edge cases for GW labels and event name normalization
-- **Fixture-based DOM tests** (`tests/scraper/fixture.test.ts`) — scraper selectors against saved HTML from a real VFL page. When VFL changes their markup, this test breaks and shows exactly what changed.
+- **API client unit tests** (`tests/scraper/parser.test.ts`) — `extractUserId` URL parsing, `scoreableGameweeks` match filtering logic
 - **DB integration tests** (`tests/db/index.test.ts`) — runs against a dedicated `vfl_test` database in the local Docker Postgres container, isolated from dev data. Tests upsert semantics, transactions, standings queries.
 - No snapshot tests (evaluated and rejected — see `docs/architecture.md`)
-- No E2E browser tests for v1
 
 ## Deeper Reading
 

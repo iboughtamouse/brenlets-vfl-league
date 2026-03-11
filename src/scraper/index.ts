@@ -1,160 +1,165 @@
 /**
- * Scraper module — fetches all VFL team pages and extracts standings data.
+ * VFL API client — fetches event metadata and team scores from the
+ * VFL JSON API, replacing the Playwright-based scraper.
  *
- * Uses Playwright (headless Chromium) because VFL is a Next.js app that
- * renders all team data client-side. Plain HTTP returns "Loading team data...".
- *
- * Reuses a single browser instance across all team pages for efficiency.
+ * Two endpoints:
+ *   GET /api/event/currentevent  → event metadata, matches, gameweek periods
+ *   GET /api/fantasyteam/team    → individual team scores per gameweek
  */
 
-import { chromium, type Browser, type Page } from '@playwright/test';
-import { parseGwLabel, normalizeEventName, type GwLabelResult } from './parser.js';
+const API_BASE = 'https://api.valorantfantasyleague.net/api';
+
+// ---------------------------------------------------------------------------
+// Types — shaped from the actual API responses
+// ---------------------------------------------------------------------------
 
 export interface TeamConfig {
   manager: string;
   url: string;
 }
 
-export interface ScrapedTeam {
+export interface GameweekPeriod {
+  id: number;
+  eventId: number;
+  gameweek: number;
+  startTime: string; // Unix timestamp as string
+  endTime: string;
+}
+
+export interface EventMatch {
+  id: string;
+  gameweek: number;
+  isComplete: boolean;
+  havePointsBeenAssigned: boolean;
+}
+
+export interface CurrentEvent {
+  id: number;
+  name: string;
+  gameweekPeriods: GameweekPeriod[];
+  eventMatches: EventMatch[];
+}
+
+export interface TeamScore {
   manager: string;
   url: string;
   teamName: string | null;
-  gameWeek: number | null;
-  points: number | null;
-  scrapedAt: string; // ISO 8601
+  gameWeek: number;
+  points: number;
+  scrapedAt: string;
   error?: string;
 }
 
-/**
- * Visit the VFL leaderboard and extract the current event name.
- *
- * The leaderboard has a "Current Event" label followed by a button whose
- * text content is the event name (e.g. "VCT 2026 : Masters Santiago").
- */
-export async function scrapeCurrentEvent(page: Page): Promise<string> {
-  await page.goto('https://www.valorantfantasyleague.net/leaderboard', {
-    waitUntil: 'networkidle',
-    timeout: 30_000,
-  });
+export interface FetchResult {
+  event: string;
+  teams: TeamScore[];
+}
 
-  const eventName = await page.evaluate(() => {
-    const labels = [...document.querySelectorAll('label')];
-    const currentEventLabel = labels.find(
-      (l) => l.textContent?.trim().toLowerCase() === 'current event',
-    );
-    if (!currentEventLabel) return null;
+// ---------------------------------------------------------------------------
+// API helpers
+// ---------------------------------------------------------------------------
 
-    const parent = currentEventLabel.parentElement;
-    if (!parent) return null;
-
-    const button = parent.querySelector('button');
-    return button?.textContent?.trim() ?? null;
-  });
-
-  if (!eventName) {
-    throw new Error('Could not find current event name on leaderboard page');
+/** Fetch the current event metadata from VFL. */
+export async function fetchCurrentEvent(): Promise<CurrentEvent> {
+  const res = await fetch(`${API_BASE}/event/currentevent`);
+  if (!res.ok) {
+    throw new Error(`VFL /event/currentevent returned HTTP ${res.status}`);
   }
+  return res.json() as Promise<CurrentEvent>;
+}
 
-  return normalizeEventName(eventName);
+interface FantasyTeamResponse {
+  name: string | null;
+  gameweekPoints: number | null;
+  gameweek: number | null;
+}
+
+/** Fetch a single team's score for a specific event + gameweek. */
+async function fetchTeamScore(
+  userId: number,
+  eventId: number,
+  gameweek: number,
+): Promise<FantasyTeamResponse> {
+  const res = await fetch(
+    `${API_BASE}/fantasyteam/team?userId=${userId}&eventId=${eventId}&gameweek=${gameweek}`,
+  );
+  if (!res.ok) {
+    throw new Error(`VFL /fantasyteam/team returned HTTP ${res.status}`);
+  }
+  return res.json() as Promise<FantasyTeamResponse>;
+}
+
+// ---------------------------------------------------------------------------
+// Core logic
+// ---------------------------------------------------------------------------
+
+/** Extract the numeric user ID from a VFL team URL like ".../team/22832". */
+export function extractUserId(url: string): number {
+  const match = url.match(/\/team\/(\d+)/);
+  if (!match) throw new Error(`Cannot extract user ID from URL: ${url}`);
+  return Number(match[1]);
 }
 
 /**
- * Extract team name and GW label from a single already-navigated page.
+ * Determine which gameweeks have at least one match with points assigned.
+ * These are the gameweeks we should write scores for.
  */
-async function extractTeamData(page: Page): Promise<{
-  teamName: string | null;
-  gwLabel: string | null;
-}> {
-  await page.waitForSelector('[data-testid="team-page"]', { timeout: 15_000 });
-
-  // Wait for the GW label to hydrate — the page container renders before the
-  // game week data on VFL's Next.js client. The GW label is a .text-2xl child
-  // inside the .text-5xl team name container. Its color class varies by score
-  // (text-stone-500, text-fuchsia-500, text-orange-900, etc.) so we match on
-  // the size class which is consistent.
-  const gwSelector = '[data-testid="team-page"] .text-5xl .text-2xl';
-  await page.waitForSelector(gwSelector, { timeout: 15_000 });
-
-  const teamName = await page.$eval('[data-testid="team-page"] .text-5xl', (el) => {
-    const clone = el.cloneNode(true) as HTMLElement;
-    clone.querySelectorAll('*').forEach((child) => child.remove());
-    return clone.textContent?.trim() ?? null;
-  });
-
-  const gwLabel = await page.$eval(gwSelector, (el) => el.textContent?.trim() ?? null);
-
-  return { teamName, gwLabel };
+export function scoreableGameweeks(event: CurrentEvent): number[] {
+  const gws = new Set<number>();
+  for (const match of event.eventMatches) {
+    if (match.havePointsBeenAssigned) {
+      gws.add(match.gameweek);
+    }
+  }
+  return [...gws].sort((a, b) => a - b);
 }
 
 /**
- * Scrape a single team page. Returns structured data or an error marker.
+ * Fetch scores for all teams across all scoreable gameweeks.
+ *
+ * This is the main entry point — replaces the old Playwright `scrapeAll`.
  */
-async function scrapeTeam(page: Page, team: TeamConfig): Promise<ScrapedTeam> {
+export async function fetchAll(teams: TeamConfig[]): Promise<FetchResult> {
+  console.log('Fetching current event from VFL API...');
+  const event = await fetchCurrentEvent();
+  console.log(`Current event: ${event.name} (id=${event.id})\n`);
+
+  const gws = scoreableGameweeks(event);
+  console.log(`Scoreable gameweeks: ${gws.length ? gws.join(', ') : 'none'}\n`);
+
+  const results: TeamScore[] = [];
   const scrapedAt = new Date().toISOString();
 
-  try {
-    await page.goto(team.url, { waitUntil: 'networkidle', timeout: 30_000 });
-    const { teamName, gwLabel } = await extractTeamData(page);
-
-    const parsed: GwLabelResult | null = gwLabel ? parseGwLabel(gwLabel) : null;
-
-    return {
-      manager: team.manager,
-      url: team.url,
-      teamName,
-      gameWeek: parsed?.gameWeek ?? null,
-      points: parsed?.points ?? null,
-      scrapedAt,
-    };
-  } catch (err) {
-    return {
-      manager: team.manager,
-      url: team.url,
-      teamName: null,
-      gameWeek: null,
-      points: null,
-      scrapedAt,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
-}
-
-export interface ScrapeResult {
-  event: string;
-  teams: ScrapedTeam[];
-}
-
-/**
- * Scrape all teams. Launches a single browser, visits the leaderboard to
- * determine the current event, then visits each team page sequentially.
- */
-export async function scrapeAll(teams: TeamConfig[]): Promise<ScrapeResult> {
-  const browser: Browser = await chromium.launch({ headless: true });
-  const page: Page = await browser.newPage();
-  const results: ScrapedTeam[] = [];
-
-  try {
-    // Step 1: Get the current event name from the leaderboard
-    console.log('Fetching current event from leaderboard...');
-    const event = await scrapeCurrentEvent(page);
-    console.log(`Current event: ${event}\n`);
-
-    // Step 2: Scrape each team page
+  for (const gw of gws) {
+    console.log(`--- GW${gw} ---`);
     for (const team of teams) {
-      console.log(`Scraping ${team.manager} (${team.url})...`);
-      const result = await scrapeTeam(page, team);
-
-      if (result.error) {
-        console.error(`  ✗ ${team.manager}: ${result.error}`);
-      } else {
-        console.log(`  ✓ ${result.teamName} — GW${result.gameWeek}: ${result.points} PTS`);
+      const userId = extractUserId(team.url);
+      try {
+        const data = await fetchTeamScore(userId, event.id, gw);
+        results.push({
+          manager: team.manager,
+          url: team.url,
+          teamName: data.name,
+          gameWeek: gw,
+          points: data.gameweekPoints ?? 0,
+          scrapedAt,
+        });
+        console.log(`  ✓ ${team.manager.padEnd(14)} ${data.name} — ${data.gameweekPoints} pts`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        results.push({
+          manager: team.manager,
+          url: team.url,
+          teamName: null,
+          gameWeek: gw,
+          points: 0,
+          scrapedAt,
+          error: message,
+        });
+        console.error(`  ✗ ${team.manager.padEnd(14)} ERROR: ${message}`);
       }
-
-      results.push(result);
     }
-
-    return { event, teams: results };
-  } finally {
-    await browser.close();
   }
+
+  return { event: event.name, teams: results };
 }
