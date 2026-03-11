@@ -21,7 +21,7 @@ interface WeeksResponse {
 interface StandingsResponse {
   standings: Standing[];
   event: string | null;
-  gameWeek: number | null;
+  gameWeek: number | 'total' | null;
 }
 
 // Generate visitor count once at module level (not during render)
@@ -29,7 +29,7 @@ const VISITOR_COUNT = Math.floor(Math.random() * 99999) + 10000;
 
 function App() {
   const [weeks, setWeeks] = useState<number[]>([]);
-  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState<number | 'total' | null>(null);
   const [currentEvent, setCurrentEvent] = useState<string | null>(null);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +61,7 @@ function App() {
       });
   }, []);
 
-  function selectWeek(week: number) {
+  function selectWeek(week: number | 'total') {
     setSelectedWeek(week);
     setLoading(true);
     setError(null);
@@ -118,23 +118,33 @@ function App() {
 
         {/* Week Selector */}
         <div className="week-selector">
-          <span className="selector-label">SELECT GAME WEEK:</span>
-          {weeks.map((week) => (
-            <button
-              key={week}
-              className={`week-button ${selectedWeek === week ? 'active' : ''}`}
-              onClick={() => selectWeek(week)}
-            >
-              GW {week}
-            </button>
-          ))}
+          <label htmlFor="gw-select" className="selector-label">
+            ⚔️ Select game week ⚔️
+          </label>
+          <select
+            id="gw-select"
+            className="week-dropdown"
+            value={selectedWeek ?? ''}
+            onChange={(e) => {
+              const val = (e.target as HTMLSelectElement).value;
+              selectWeek(val === 'total' ? 'total' : Number(val));
+            }}
+          >
+            {weeks.map((week) => (
+              <option key={week} value={week}>
+                ★ Game Week {week} ★
+              </option>
+            ))}
+            {weeks.length > 0 && <option value="total">🏆 EVENT TOTAL 🏆</option>}
+          </select>
         </div>
 
         {/* Standings Table */}
         <div className="table-container">
           <div className="table-header-bar">
-            <span className="blink">◆</span> GAME WEEK {selectedWeek ?? '?'} STANDINGS{' '}
-            <span className="blink">◆</span>
+            <span className="blink">◆</span>{' '}
+            {selectedWeek === 'total' ? 'EVENT TOTAL' : `GAME WEEK ${selectedWeek ?? '?'}`}{' '}
+            STANDINGS <span className="blink">◆</span>
           </div>
 
           {loading ? (

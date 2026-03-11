@@ -354,4 +354,88 @@ describe('VflDatabase', () => {
       expect((await db.getTeams())[0]!.manager).toBe('Seal');
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Event Total Standings
+  // -------------------------------------------------------------------------
+
+  describe('getEventTotalStandings', () => {
+    it('sums points across game weeks and sorts descending', async () => {
+      await db.saveFetchBatch(EVENT, [
+        {
+          manager: 'Seal',
+          url: 'https://www.valorantfantasyleague.net/team/4617',
+          teamName: 'seals kittens',
+          gameWeek: 1,
+          points: 100,
+          fetchedAt: '2026-02-26T00:00:00.000Z',
+        },
+        {
+          manager: 'Seal',
+          url: 'https://www.valorantfantasyleague.net/team/4617',
+          teamName: 'seals kittens',
+          gameWeek: 2,
+          points: 300,
+          fetchedAt: '2026-03-05T00:00:00.000Z',
+        },
+        {
+          manager: 'Bren',
+          url: 'https://www.valorantfantasyleague.net/team/5989',
+          teamName: 'SACRIFICAL LAMBS',
+          gameWeek: 1,
+          points: 200,
+          fetchedAt: '2026-02-26T00:00:00.000Z',
+        },
+        {
+          manager: 'Bren',
+          url: 'https://www.valorantfantasyleague.net/team/5989',
+          teamName: 'SACRIFICAL LAMBS',
+          gameWeek: 2,
+          points: 150,
+          fetchedAt: '2026-03-05T00:00:00.000Z',
+        },
+      ]);
+
+      const standings = await db.getEventTotalStandings(EVENT);
+      expect(standings).toHaveLength(2);
+
+      // Seal: 100 + 300 = 400, Bren: 200 + 150 = 350 → Seal first
+      expect(standings[0]!.manager).toBe('Seal');
+      expect(Number(standings[0]!.points)).toBe(400);
+      expect(standings[1]!.manager).toBe('Bren');
+      expect(Number(standings[1]!.points)).toBe(350);
+    });
+
+    it('returns empty array when no scores exist for event', async () => {
+      const standings = await db.getEventTotalStandings(EVENT);
+      expect(standings).toHaveLength(0);
+    });
+
+    it('only includes scores from the requested event', async () => {
+      await db.saveFetchBatch(EVENT, [
+        {
+          manager: 'Seal',
+          url: 'https://www.valorantfantasyleague.net/team/4617',
+          teamName: 'seals kittens',
+          gameWeek: 1,
+          points: 100,
+          fetchedAt: '2026-02-26T00:00:00.000Z',
+        },
+      ]);
+      await db.saveFetchBatch(EVENT_2, [
+        {
+          manager: 'Seal',
+          url: 'https://www.valorantfantasyleague.net/team/4617',
+          teamName: 'seals kittens',
+          gameWeek: 1,
+          points: 999,
+          fetchedAt: '2026-02-26T00:00:00.000Z',
+        },
+      ]);
+
+      const standings = await db.getEventTotalStandings(EVENT);
+      expect(standings).toHaveLength(1);
+      expect(Number(standings[0]!.points)).toBe(100);
+    });
+  });
 });

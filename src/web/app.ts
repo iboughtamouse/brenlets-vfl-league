@@ -103,6 +103,12 @@ app.get('/api/standings', async (c) => {
 
   // Resolve game week
   const gwParam = c.req.query('gw');
+
+  if (gwParam === 'total') {
+    const standings = await database.getEventTotalStandings(event);
+    return c.json({ standings, event, gameWeek: 'total' });
+  }
+
   let gameWeek: number | null;
 
   if (gwParam != null) {

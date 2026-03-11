@@ -208,6 +208,22 @@ export class VflDatabase {
     return result.rows;
   }
 
+  /** Get total points per team across all game weeks for an event, sorted descending. */
+  async getEventTotalStandings(event: string): Promise<StandingsRow[]> {
+    const result = await this.pool.query(
+      `SELECT t.vfl_id, t.manager, t.url, t.team_name,
+              s.event, MAX(s.game_week) AS game_week,
+              SUM(s.points) AS points, MAX(s.scraped_at) AS scraped_at
+       FROM scores s
+       JOIN teams t ON t.vfl_id = s.team_vfl_id
+       WHERE s.event = $1
+       GROUP BY t.vfl_id, t.manager, t.url, t.team_name, s.event
+       ORDER BY SUM(s.points) DESC`,
+      [event],
+    );
+    return result.rows;
+  }
+
   // -----------------------------------------------------------------------
   // Bulk operations (used by fetcher)
   // -----------------------------------------------------------------------
