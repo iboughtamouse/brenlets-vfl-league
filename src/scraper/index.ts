@@ -1,6 +1,6 @@
 /**
  * VFL API client — fetches event metadata and team scores from the
- * VFL JSON API, replacing the Playwright-based scraper.
+ * VFL JSON API.
  *
  * Two endpoints:
  *   GET /api/event/currentevent  → event metadata, matches, gameweek periods
@@ -116,8 +116,6 @@ export function scoreableGameweeks(event: CurrentEvent): number[] {
 
 /**
  * Fetch scores for all teams across all scoreable gameweeks.
- *
- * This is the main entry point — replaces the old Playwright `scrapeAll`.
  */
 export async function fetchAll(teams: TeamConfig[]): Promise<FetchResult> {
   console.log('Fetching current event from VFL API...');

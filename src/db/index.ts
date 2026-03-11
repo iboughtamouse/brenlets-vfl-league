@@ -3,7 +3,7 @@
  *
  * Schema:
  *   teams  — one row per VFL team (keyed by the numeric ID from the URL)
- *   scores — one row per team per event per game week (upserted on re-scrape)
+ *   scores — one row per team per event per game week (upserted on re-fetch)
  *
  * All operations are async. The pool manages connections automatically.
  */
