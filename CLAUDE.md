@@ -41,7 +41,7 @@ src/web/app.ts            — Hono API routes (shared by dev server + Vercel)
 src/web/server.ts         — Local dev server (@hono/node-server + static files)
 api/index.ts              — Vercel serverless entry point (re-exports Hono app)
 client/src/App.tsx        — Preact frontend (single component, retro GeoCities aesthetic)
-scripts/scrape-all.ts     — CLI entry: fetch all teams → save to DB
+scripts/fetch-all.ts      — CLI entry: fetch all teams → save to DB
 tests/                    — Vitest unit + integration tests
 .github/workflows/        — GitHub Actions (scheduled fetching)
 ```
@@ -75,7 +75,7 @@ See `src/web/app.ts` for implementation. All params optional, defaulting to late
 
 ```bash
 npm test              # Vitest (unit + integration)
-npm run scrape        # Run fetcher, save to DB
+npm run fetch         # Run fetcher, save to DB
 npm run dev:server    # Local dev server (API + client)
 npm run lint          # ESLint
 npm run format        # Prettier

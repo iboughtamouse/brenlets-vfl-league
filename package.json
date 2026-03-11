@@ -6,7 +6,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "scrape": "tsx scripts/scrape-all.ts",
+    "fetch": "tsx scripts/fetch-all.ts",
     "dev:server": "tsx --watch src/web/server.ts",
     "lint": "eslint .",
     "format": "prettier --write .",

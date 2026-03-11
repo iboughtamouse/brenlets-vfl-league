@@ -30,7 +30,7 @@ src/web/app.ts          — Hono app with API routes (shared by dev + Vercel)
 src/web/server.ts       — Local dev server (@hono/node-server + static files)
 api/index.ts            — Vercel serverless entry point
 client/                 — Preact frontend (Vite)
-scripts/scrape-all.ts   — CLI entry point: fetch all teams → save to DB
+scripts/fetch-all.ts    — CLI entry point: fetch all teams → save to DB
 tests/                  — Vitest unit + integration tests
 .github/workflows/      — GitHub Actions (scheduled fetching)
 ```
@@ -47,7 +47,7 @@ For local development with the full stack, you also need Docker for a local Post
 
 ```bash
 # Run the fetcher against all teams and save to database
-npm run scrape
+npm run fetch
 
 # Start the dev server (API + client)
 npm run dev:server

@@ -1,10 +1,10 @@
 /**
- * scrape-all.ts
+ * fetch-all.ts
  *
  * Fetches scores for all teams in config/teams.json from the VFL API
  * and saves them to the Postgres database.
  *
- * Run with: npm run scrape
+ * Run with: npm run fetch
  */
 
 import { readFile } from 'node:fs/promises';
