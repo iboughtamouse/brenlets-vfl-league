@@ -133,13 +133,13 @@ export class VflDatabase {
   // Scores
   // -----------------------------------------------------------------------
 
-  /** Upsert a score — insert or update points/scraped_at for (team, event, game_week). */
+  /** Upsert a score — insert or update points/fetched_at for (team, event, game_week). */
   async upsertScore(
     teamVflId: number,
     event: string,
     gameWeek: number,
     points: number,
-    scrapedAt: string,
+    fetchedAt: string,
   ): Promise<void> {
     await this.pool.query(
       `INSERT INTO scores (team_vfl_id, event, game_week, points, scraped_at)
@@ -147,7 +147,7 @@ export class VflDatabase {
        ON CONFLICT(team_vfl_id, event, game_week) DO UPDATE SET
          points     = EXCLUDED.points,
          scraped_at = EXCLUDED.scraped_at`,
-      [teamVflId, event, gameWeek, points, scrapedAt],
+      [teamVflId, event, gameWeek, points, fetchedAt],
     );
   }
 
@@ -209,16 +209,16 @@ export class VflDatabase {
   }
 
   // -----------------------------------------------------------------------
-  // Bulk operations (used by scraper)
+  // Bulk operations (used by fetcher)
   // -----------------------------------------------------------------------
 
   /**
-   * Save a batch of scrape results. Runs inside a transaction for atomicity.
+   * Save a batch of fetch results. Runs inside a transaction for atomicity.
    * Skips entries with errors or missing data.
    *
    * Returns the count of successfully saved results.
    */
-  async saveScrapeBatch(
+  async saveFetchBatch(
     event: string,
     results: Array<{
       manager: string;
@@ -226,7 +226,7 @@ export class VflDatabase {
       teamName: string | null;
       gameWeek: number | null;
       points: number | null;
-      scrapedAt: string;
+      fetchedAt: string;
       error?: string;
     }>,
   ): Promise<number> {
@@ -259,7 +259,7 @@ export class VflDatabase {
            ON CONFLICT(team_vfl_id, event, game_week) DO UPDATE SET
              points     = EXCLUDED.points,
              scraped_at = EXCLUDED.scraped_at`,
-          [vflId, event, r.gameWeek, r.points, r.scrapedAt],
+          [vflId, event, r.gameWeek, r.points, r.fetchedAt],
         );
 
         saved++;

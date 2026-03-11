@@ -245,10 +245,10 @@ describe('VflDatabase', () => {
   });
 
   // -------------------------------------------------------------------------
-  // saveScrapeBatch
+  // saveFetchBatch
   // -------------------------------------------------------------------------
 
-  describe('saveScrapeBatch', () => {
+  describe('saveFetchBatch', () => {
     it('saves valid results and skips errored ones', async () => {
       const results = [
         {
@@ -257,7 +257,7 @@ describe('VflDatabase', () => {
           teamName: 'seals kittens',
           gameWeek: 1,
           points: 457,
-          scrapedAt: '2026-02-26T00:00:00.000Z',
+          fetchedAt: '2026-02-26T00:00:00.000Z',
         },
         {
           manager: 'Alice',
@@ -265,7 +265,7 @@ describe('VflDatabase', () => {
           teamName: null,
           gameWeek: null,
           points: null,
-          scrapedAt: '2026-02-26T00:00:00.000Z',
+          fetchedAt: '2026-02-26T00:00:00.000Z',
           error: 'Timeout',
         },
         {
@@ -274,11 +274,11 @@ describe('VflDatabase', () => {
           teamName: 'SACRIFICAL LAMBS',
           gameWeek: 1,
           points: 320,
-          scrapedAt: '2026-02-26T00:00:00.000Z',
+          fetchedAt: '2026-02-26T00:00:00.000Z',
         },
       ];
 
-      const saved = await db.saveScrapeBatch(EVENT, results);
+      const saved = await db.saveFetchBatch(EVENT, results);
 
       expect(saved).toBe(2);
       expect(await db.getTeams()).toHaveLength(2);
@@ -296,7 +296,7 @@ describe('VflDatabase', () => {
           teamName: 'seals kittens',
           gameWeek: null as number | null,
           points: 100,
-          scrapedAt: '2026-02-26T00:00:00.000Z',
+          fetchedAt: '2026-02-26T00:00:00.000Z',
         },
         {
           manager: 'Alice',
@@ -304,24 +304,24 @@ describe('VflDatabase', () => {
           teamName: 'babu world',
           gameWeek: 1,
           points: null as number | null,
-          scrapedAt: '2026-02-26T00:00:00.000Z',
+          fetchedAt: '2026-02-26T00:00:00.000Z',
         },
       ];
 
-      const saved = await db.saveScrapeBatch(EVENT, results);
+      const saved = await db.saveFetchBatch(EVENT, results);
       expect(saved).toBe(0);
     });
 
     it('is atomic — all or nothing on failure', async () => {
       // First, insert a valid batch.
-      await db.saveScrapeBatch(EVENT, [
+      await db.saveFetchBatch(EVENT, [
         {
           manager: 'Seal',
           url: 'https://www.valorantfantasyleague.net/team/4617',
           teamName: 'seals kittens',
           gameWeek: 1,
           points: 100,
-          scrapedAt: '2026-02-26T00:00:00.000Z',
+          fetchedAt: '2026-02-26T00:00:00.000Z',
         },
       ]);
       expect(await db.getTeams()).toHaveLength(1);
@@ -335,7 +335,7 @@ describe('VflDatabase', () => {
           teamName: 'babu world',
           gameWeek: 2,
           points: 200,
-          scrapedAt: '2026-02-26T00:00:00.000Z',
+          fetchedAt: '2026-02-26T00:00:00.000Z',
         },
         {
           manager: 'Bad',
@@ -343,11 +343,11 @@ describe('VflDatabase', () => {
           teamName: 'oops',
           gameWeek: 2,
           points: 50,
-          scrapedAt: '2026-02-26T00:00:00.000Z',
+          fetchedAt: '2026-02-26T00:00:00.000Z',
         },
       ];
 
-      await expect(db.saveScrapeBatch(EVENT, badBatch)).rejects.toThrow('Cannot extract VFL ID');
+      await expect(db.saveFetchBatch(EVENT, badBatch)).rejects.toThrow('Cannot extract VFL ID');
 
       // Alice should NOT have been saved (transaction rolled back).
       expect(await db.getTeams()).toHaveLength(1);

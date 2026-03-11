@@ -48,7 +48,7 @@ export interface TeamScore {
   teamName: string | null;
   gameWeek: number;
   points: number;
-  scrapedAt: string;
+  fetchedAt: string;
   error?: string;
 }
 
@@ -121,7 +121,7 @@ export async function fetchAll(teams: TeamConfig[]): Promise<FetchResult> {
   console.log(`Scoreable gameweeks: ${gws.length ? gws.join(', ') : 'none'}\n`);
 
   const results: TeamScore[] = [];
-  const scrapedAt = new Date().toISOString();
+  const fetchedAt = new Date().toISOString();
 
   for (const gw of gws) {
     console.log(`--- GW${gw} ---`);
@@ -135,7 +135,7 @@ export async function fetchAll(teams: TeamConfig[]): Promise<FetchResult> {
           teamName: data.name,
           gameWeek: gw,
           points: data.gameweekPoints ?? 0,
-          scrapedAt,
+          fetchedAt,
         });
         console.log(`  ✓ ${team.manager.padEnd(14)} ${data.name} — ${data.gameweekPoints} pts`);
       } catch (err) {
@@ -146,7 +146,7 @@ export async function fetchAll(teams: TeamConfig[]): Promise<FetchResult> {
           teamName: null,
           gameWeek: gw,
           points: 0,
-          scrapedAt,
+          fetchedAt,
           error: message,
         });
         console.error(`  ✗ ${team.manager.padEnd(14)} ERROR: ${message}`);

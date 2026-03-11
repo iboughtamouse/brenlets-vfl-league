@@ -30,7 +30,7 @@ const db = new VflDatabase();
 
 try {
   await db.initialize();
-  const saved = await db.saveScrapeBatch(event, results);
+  const saved = await db.saveFetchBatch(event, results);
   console.log(`Saved ${saved} results to database.`);
 } finally {
   await db.close();
