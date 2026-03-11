@@ -2,7 +2,7 @@
  * Local development server — Hono on Node.js.
  *
  * Imports the shared Hono app from app.ts and adds:
- *   - Static file serving for the built React client
+ *   - Static file serving for the built Preact client
  *   - SPA fallback (index.html for non-API routes)
  *   - @hono/node-server to start a persistent HTTP server
  *
