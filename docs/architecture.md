@@ -29,7 +29,7 @@ Calls the VFL JSON API to fetch event metadata and team scores. No browser, no D
 - `GET /api/event/currentevent` — returns the current event's metadata: name, ID, gameweek periods (with start/end timestamps), and all event matches (with `isComplete` and `havePointsBeenAssigned` flags)
 - `GET /api/fantasyteam/team?userId=N&eventId=N&gameweek=N` — returns an individual team's name, gameweek points, and player breakdown
 
-**Event detection:** `fetchCurrentEvent()` calls `/api/event/currentevent`. The response includes the event name and ID directly — no scraping a dropdown or normalizing suffixes. The endpoint is assumed to auto-transition between events as VFL progresses through the season.
+**Event detection:** `fetchCurrentEvent()` calls `/api/event/currentevent`. The response includes the event name and ID directly — no parsing a dropdown or normalizing suffixes. The endpoint is assumed to auto-transition between events as VFL progresses through the season.
 
 **Scoreable gameweek filtering:** `scoreableGameweeks(event)` examines the `eventMatches` array and collects gameweeks where at least one match has `havePointsBeenAssigned: true`. This prevents writing 0-point rows for gameweeks that haven't been played yet, and supports mid-gameweek daily updates (e.g. Day 1 of a 3-day GW has partial scores).
 

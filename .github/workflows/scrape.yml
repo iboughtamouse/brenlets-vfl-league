@@ -12,7 +12,7 @@ on:
   workflow_dispatch: # Manual trigger from GitHub Actions UI
 
 jobs:
-  scrape:
+  fetch:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -29,7 +29,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run scraper
+      - name: Run fetcher
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run scrape

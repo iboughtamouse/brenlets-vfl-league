@@ -53,7 +53,7 @@ See `src/db/index.ts` for the DDL. Two tables:
 - **teams** — `vfl_id` (integer PK from URL), `manager`, `url`, `team_name`
 - **scores** — `team_vfl_id` (FK → teams), `event`, `game_week`, `points`, `scraped_at`, with `UNIQUE(team_vfl_id, event, game_week)`
 
-Upsert semantics: re-scraping the same event + game week updates the existing row rather than duplicating. All distinct event + game week combinations are preserved for history. Team names are re-fetched on every scrape (they change between game weeks).
+Upsert semantics: re-fetching the same event + game week updates the existing row rather than duplicating. All distinct event + game week combinations are preserved for history. Team names are re-fetched on every run (they change between game weeks).
 
 ## API Routes
 
@@ -75,7 +75,7 @@ See `src/web/app.ts` for implementation. All params optional, defaulting to late
 
 ```bash
 npm test              # Vitest (unit + integration)
-npm run scrape        # Run scraper, save to DB
+npm run scrape        # Run fetcher, save to DB
 npm run dev:server    # Local dev server (API + client)
 npm run lint          # ESLint
 npm run format        # Prettier
