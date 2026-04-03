@@ -203,6 +203,59 @@ marquee {
   box-shadow: 0 0 15px rgba(255, 102, 0, 0.3);
 }
 
+/* Event Selector */
+.event-selector {
+  text-align: center;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #1a1a00 0%, #333300 100%);
+  padding: 15px 20px;
+  border: 6px outset #ffff00;
+  box-shadow:
+    0 0 30px rgba(255, 255, 0, 0.4),
+    inset 0 0 20px rgba(255, 165, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.event-dropdown {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 10px 30px 10px 15px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Ctext y='14' font-size='16'%3E▼%3C/text%3E%3C/svg%3E")
+      no-repeat right 10px center,
+    linear-gradient(180deg, #ffaa00 0%, #cc5500 100%);
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 280px;
+  box-shadow: 0 0 20px rgba(255, 170, 0, 0.6);
+}
+
+.event-dropdown:hover {
+  box-shadow: 0 0 30px rgba(255, 170, 0, 0.9);
+}
+
+.event-dropdown:focus {
+  outline: none;
+}
+
+.event-dropdown option {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  background: #000033;
+  color: #ffff00;
+  padding: 8px;
+}
+
 /* Week Selector */
 .week-selector {
   text-align: center;

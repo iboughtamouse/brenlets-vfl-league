@@ -24,28 +24,37 @@ interface StandingsResponse {
   gameWeek: number | 'total' | null;
 }
 
+interface EventsResponse {
+  events: string[];
+  latest: string | null;
+}
+
 // Generate visitor count once at module level (not during render)
 const VISITOR_COUNT = Math.floor(Math.random() * 99999) + 10000;
 
 function App() {
+  const [events, setEvents] = useState<string[]>([]);
   const [weeks, setWeeks] = useState<number[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<number | 'total' | null>(null);
-  const [currentEvent, setCurrentEvent] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch available game weeks on mount, then load the latest standings
+  // Fetch available events + game weeks on mount, then load the latest standings
   useEffect(() => {
-    fetch('/api/standings/weeks')
-      .then((res) => res.json())
-      .then((data: WeeksResponse) => {
-        setWeeks(data.weeks);
-        setCurrentEvent(data.event);
-        if (data.latest != null) {
-          setSelectedWeek(data.latest);
-          const params = new URLSearchParams({ gw: String(data.latest) });
-          if (data.event) params.set('event', data.event);
+    Promise.all([
+      fetch('/api/standings/events').then((res) => res.json()) as Promise<EventsResponse>,
+      fetch('/api/standings/weeks').then((res) => res.json()) as Promise<WeeksResponse>,
+    ])
+      .then(([eventsData, weeksData]) => {
+        setEvents(eventsData.events);
+        setSelectedEvent(weeksData.event);
+        setWeeks(weeksData.weeks);
+        if (weeksData.latest != null) {
+          setSelectedWeek(weeksData.latest);
+          const params = new URLSearchParams({ gw: String(weeksData.latest) });
+          if (weeksData.event) params.set('event', weeksData.event);
           return fetch(`/api/standings?${params}`)
             .then((res) => res.json())
             .then((standingsData: StandingsResponse) => {
@@ -54,19 +63,48 @@ function App() {
         }
       })
       .catch(() => {
-        setError('Failed to load game weeks.');
+        setError('Failed to load data.');
       })
       .finally(() => {
         setLoading(false);
       });
   }, []);
 
+  function selectEvent(event: string) {
+    setSelectedEvent(event);
+    setLoading(true);
+    setError(null);
+    fetch(`/api/standings/weeks?${new URLSearchParams({ event })}`)
+      .then((res) => res.json())
+      .then((weeksData: WeeksResponse) => {
+        setWeeks(weeksData.weeks);
+        const latestWeek = weeksData.latest;
+        if (latestWeek != null) {
+          setSelectedWeek(latestWeek);
+          return fetch(`/api/standings?${new URLSearchParams({ event, gw: String(latestWeek) })}`)
+            .then((res) => res.json())
+            .then((data: StandingsResponse) => {
+              setStandings(data.standings);
+            });
+        } else {
+          setSelectedWeek(null);
+          setStandings([]);
+        }
+      })
+      .catch(() => {
+        setError('Failed to load event.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }
+
   function selectWeek(week: number | 'total') {
     setSelectedWeek(week);
     setLoading(true);
     setError(null);
     const params = new URLSearchParams({ gw: String(week) });
-    if (currentEvent) params.set('event', currentEvent);
+    if (selectedEvent) params.set('event', selectedEvent);
     fetch(`/api/standings?${params}`)
       .then((res) => res.json())
       .then((data: StandingsResponse) => {
@@ -108,11 +146,27 @@ function App() {
 
       {/* Main Content */}
       <main className="content-area">
-        {/* Current Event */}
-        {currentEvent && (
-          <div className="event-label">
-            <span className="blink">▶</span> {currentEvent.toUpperCase()}{' '}
-            <span className="blink">◀</span>
+        {/* Event Selector */}
+        {events.length > 0 && (
+          <div className="event-selector">
+            <label htmlFor="event-select" className="selector-label">
+              🌍 Select event 🌍
+            </label>
+            <select
+              id="event-select"
+              className="event-dropdown"
+              value={selectedEvent ?? ''}
+              onChange={(e) => {
+                const val = (e.target as HTMLSelectElement).value;
+                if (val) selectEvent(val);
+              }}
+            >
+              {events.map((event) => (
+                <option key={event} value={event}>
+                  ★ {event} ★
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
