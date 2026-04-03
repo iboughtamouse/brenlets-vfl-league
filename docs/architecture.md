@@ -43,7 +43,7 @@ Postgres on Railway, accessed via `node-postgres` (`pg`). The `VflDatabase` clas
 
 **Upsert mechanics:** Both `upsertTeam` and `upsertScore` use Postgres `ON CONFLICT ... DO UPDATE`. Re-fetching the same event + game week updates the existing row. This makes fetching idempotent — safe to re-run at any time.
 
-**Batch saves:** `saveScrapeBatch` runs inside a transaction. It skips entries with errors or missing data, then upserts teams and scores for the valid entries. If any insert fails (e.g. invalid URL), the entire transaction rolls back — no partial writes.
+**Batch saves:** `saveFetchBatch` runs inside a transaction. It skips entries with errors or missing data, then upserts teams and scores for the valid entries. If any insert fails (e.g. invalid URL), the entire transaction rolls back — no partial writes.
 
 ### Web App
 
@@ -58,7 +58,7 @@ The DB is lazily initialized via a module-level `getDb()` function. A global err
 
 GitHub Actions workflow (`.github/workflows/scrape.yml`) with three triggers:
 
-- **Schedule:** Every 15 minutes from 22:00–03:00 UTC (6PM–10PM Eastern, covers both EST and EDT). Matches end by ~7PM ET; frequent runs catch scores as soon as VFL updates.
+- **Schedule:** Every 15 minutes, all day (`*/15 * * * *`). VCT runs across Pacific, EMEA, and Americas time zones so matches can conclude at any hour. The fetch is idempotent and cheap when nothing is happening — `scoreableGameweeks()` exits early after a single `/event/currentevent` request if no gameweeks have points assigned yet.
 - **Push:** When `config/teams.json` changes
 - **Manual:** `workflow_dispatch` from the GitHub Actions UI
 
@@ -68,12 +68,24 @@ The workflow runs the fetcher and writes directly to Railway Postgres via the `D
 
 ## VFL API
 
-VFL exposes a public JSON API at `api.valorantfantasyleague.net`. Two endpoints are used:
+VFL exposes a public JSON API at `api.valorantfantasyleague.net`. Endpoints used by the fetcher:
 
 | Endpoint                                                  | Purpose                                        | Auth |
 | --------------------------------------------------------- | ---------------------------------------------- | ---- |
 | `GET /api/event/currentevent`                             | Event metadata, gameweek periods, match status | None |
 | `GET /api/fantasyteam/team?userId=N&eventId=N&gameweek=N` | Individual team scores per gameweek            | None |
+
+Endpoints not currently used by the fetcher but confirmed to exist:
+
+| Endpoint                                | Purpose                                                  | Auth                 |
+| --------------------------------------- | -------------------------------------------------------- | -------------------- |
+| `GET /api/event/event?eventId=N`        | Fetch a specific past event by numeric ID                | None                 |
+| `GET /api/matches/pretransfergameweek`  | Current pre-transfer game week number                    | None                 |
+| `GET /api/matches/posttransfergameweek` | Current post-transfer game week number                   | None                 |
+| `POST /api/auth/login`                  | Exchange a Discord OAuth access token for a VFL JWT      | Discord access token |
+| `GET /api/fantasyteam/myteam`           | Authenticated user's full team roster with player scores | VFL JWT (Bearer)     |
+
+The VFL JWT returned by `POST /api/auth/login` contains `userId` (the VFL team ID), `discordId`, and `fantasyTeamId`. This is the basis for the planned Discord sign-in feature — a user can authenticate with Discord via our OAuth app, and we exchange the token with VFL to discover their team URL automatically.
 
 The API is undocumented and could change without notice. Key behaviors discovered through testing:
 
@@ -88,7 +100,7 @@ The API is undocumented and could change without notice. Key behaviors discovere
 
 ## Testing Philosophy
 
-**Unit tests for pure functions** (`extractUserId`, `scoreableGameweeks`) cover URL parsing edge cases and the gameweek filtering logic that determines which weeks get written to the database. These are the critical decision points — getting them wrong means writing garbage data or missing real scores.
+**Unit tests for pure functions** (`extractVflId`, `scoreableGameweeks`) cover URL parsing edge cases and the gameweek filtering logic that determines which weeks get written to the database. These are the critical decision points — getting them wrong means writing garbage data or missing real scores.
 
 **DB integration tests** run against a dedicated `vfl_test` database in the local Docker Postgres container, isolated from dev data. Each test drops and recreates tables for a clean slate. Tests cover upsert semantics, transaction rollback, standings ordering, event isolation, and batch save edge cases.
 
@@ -115,3 +127,5 @@ The API is undocumented and could change without notice. Key behaviors discovere
 **Team names are volatile.** Team IDs (e.g. `/team/22832`) don't change, but team names change frequently. The fetcher re-fetches the name on every run and updates the `teams` row — always reflecting the current name. Historical names are not tracked.
 
 **The team URL list needs manual maintenance.** If a manager joins or leaves, someone edits `config/teams.json` and commits. Pushing the change triggers an automatic fetch.
+
+**No rate limiting observed on the VFL API, but none is guaranteed.** 26 teams × N gameweeks = dozens of requests per active run. Off-peak runs call only `/event/currentevent` (1 request) and exit early if no gameweeks are scoreable, so the all-day schedule does not significantly increase API load. If VFL adds rate limiting, delays between requests would be the first mitigation.

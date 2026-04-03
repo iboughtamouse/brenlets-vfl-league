@@ -39,7 +39,7 @@ The `event` column is `NOT NULL` and part of the unique constraint `UNIQUE(team_
 
 ## Nits
 
-- `src/web/app.ts` — The `/api/standings/events` endpoint isn't consumed by the frontend yet. For future use (event selector).
+- ~~`src/web/app.ts` — The `/api/standings/events` endpoint isn't consumed by the frontend yet. For future use (event selector).~~ **Resolved April 2026:** The event selector dropdown is now implemented in `client/src/App.tsx`. `/api/standings/events` is called on mount in parallel with `/api/standings/weeks`.
 
 ## Verdict
 

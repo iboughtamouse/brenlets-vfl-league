@@ -74,4 +74,4 @@ Replace the Playwright scraper entirely with direct VFL API calls.
 
 - **API is undocumented.** VFL could change response shapes or remove endpoints without notice. Mitigated by compact code that's easy to update, and unit tests that validate the contract.
 - **Event transition is untested.** We haven't observed an event change yet. The first transition will be the real test.
-- **No rate limiting observed, but none guaranteed.** 26 teams × N gameweeks = dozens of requests per run. Currently fine at 15-minute intervals. If VFL adds rate limiting, we'd need to add delays or reduce frequency.
+- **No rate limiting observed, but none guaranteed.** 26 teams × N gameweeks = dozens of requests per active run. The fetcher now runs every 15 minutes all day. Off-peak runs call only `/event/currentevent` (1 request) and exit early if no gameweeks are scoreable, so the all-day schedule does not significantly increase API load compared to the windowed schedule. If VFL adds rate limiting, delays between requests would be the first mitigation.

@@ -64,17 +64,17 @@ Existing rows get backfilled with "VCT 2026: Kickoff" (the only event scraped so
 - `/api/standings` → include event name in response
 - New: `/api/standings/events` → list available events (for future UI)
 
-### UI (Phase 1 — simple)
+### UI (Phase 1 — simple) ✅ Implemented
 
 - Display the current event name above the standings table (e.g. "VCT 2026 : Masters Santiago")
 - Game week selector scoped to the current event
 - No event switcher yet — past events preserved in DB but not browseable
 
-### UI (Phase 2 — future, optional)
+### UI (Phase 2) ✅ Implemented (April 2026)
 
-- Event selector dropdown
-- Browse any event's game weeks
-- "All-time" or cross-event views
+- Event selector dropdown above the game week selector — allows browsing any event's standings
+- Switching events reloads the available game weeks and defaults to the latest week for that event
+- Styled in amber/gold to visually distinguish from the purple game week dropdown
 
 ## Decision
 
@@ -82,6 +82,6 @@ Proceed with the schema fix + scraper update + simple UI. The critical path is p
 
 ## Open Questions — Resolved
 
-- **Selector stability:** Confirmed via Playwright inspection. The `/leaderboard` page has a `<label>` with text "Current Event" whose parent `<div>` contains a `<button>` with the event name text. Selector strategy: find label → parent → first button → textContent. Verified working against live VFL.
-- **Event name format:** ~~Store as-is from the VFL leaderboard. No normalization.~~ **Updated:** VFL appends `: Week N` to event names once matches begin (e.g. "VCT 2026 : Masters Santiago: Week 1"). This caused the same event to appear as two distinct events in the database. The scraper now normalizes event names by stripping this trailing suffix via `normalizeEventName` in `parser.ts`. The base event name (e.g. "VCT 2026 : Masters Santiago") is stored; the game week number is already captured separately from each team page.
+- **Selector stability:** ~~Confirmed via Playwright inspection.~~ **Superseded by API migration (March 2026).** The event name is returned directly by `GET /api/event/currentevent` — no DOM scraping needed. See [api-migration.md](api-migration.md).
+- **Event name format:** VFL's API returns the event name directly (e.g. "VCT 2026 : Masters Santiago"). No normalization needed — `normalizeEventName` and the associated parser logic were deleted as part of the Playwright → API migration. The name is stored as-is.
 - **Migration timing:** No risk. All existing data is Santiago GW1 (Kickoff is over, no Kickoff data was ever captured). The schema was updated with `CREATE TABLE IF NOT EXISTS` using the new `event` column and `UNIQUE(team_vfl_id, event, game_week)` constraint directly — no ALTER migration needed since we're recreating tables in tests and the production DB will get the new schema on next `initialize()` call.

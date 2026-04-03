@@ -69,7 +69,7 @@ See `src/web/app.ts` for implementation. All params optional, defaulting to late
 1. `fetchCurrentEvent()` calls `/api/event/currentevent` → event metadata including matches with `havePointsBeenAssigned` flags
 2. `scoreableGameweeks(event)` filters to gameweeks where at least one match has points assigned (prevents writing 0-point rows for unplayed GWs)
 3. `fetchAll(teams)` iterates all scoreable GWs × all teams from `config/teams.json`, calling `/api/fantasyteam/team` for each
-4. `saveScrapeBatch` upserts all teams + scores in a single transaction (atomic — rolls back on any failure)
+4. `saveFetchBatch` upserts all teams + scores in a single transaction (atomic — rolls back on any failure)
 
 ## Commands
 
@@ -85,7 +85,7 @@ npm run format        # Prettier
 
 - **Conventional Commits** enforced by commitlint + Husky (`commit-msg` hook)
 - **Prettier + ESLint** run automatically on pre-commit hook — don't document style rules, the tools enforce them
-- **GitHub Actions** runs the fetcher every 15 minutes from 6PM–10PM Eastern (after matches conclude) and on push to `config/teams.json`
+- **GitHub Actions** runs the fetcher every 15 minutes, all day (VCT runs across Pacific, EMEA, and Americas time zones so matches can conclude at any hour) and on push to `config/teams.json`
 
 ## Testing Strategy
 
