@@ -609,7 +609,7 @@ marquee {
   }
 
   .subtitle {
-    font-size: 14px;
+    font-size: 12px;
     letter-spacing: 1px;
   }
 
@@ -633,7 +633,13 @@ marquee {
   }
 
   .footer-text,
+  .selector-label {
+    font-size: 20px;
+    letter-spacing: 0;
+  }
+
   .browser-notice {
+    font-size: 12px;
     letter-spacing: 0;
   }
 
