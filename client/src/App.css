@@ -618,10 +618,6 @@ marquee {
     flex-direction: column;
   }
 
-  .standings-table {
-    font-size: 14px;
-  }
-
   .standings-table th,
   .standings-table td {
     padding: 8px 4px;
