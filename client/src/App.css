@@ -413,7 +413,6 @@ marquee {
 }
 
 .loading-text {
-  color: #ffff00;
   animation: color-pulse 2s ease-in-out infinite;
 }
 
