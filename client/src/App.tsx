@@ -244,11 +244,11 @@ function App() {
 
         {/* Fun Stats Section */}
         <div className="fun-stats">
-          <div className="stat-box stat-box-top">
+          <div className="stat-box">
             <div className="stat-title">🔥 TOP SCORER 🔥</div>
             <div className="stat-value">{topScorer}</div>
           </div>
-          <div className="stat-box stat-box-bottom">
+          <div className="stat-box">
             <div className="stat-title">💀 BIGGEST L 💀</div>
             <div className="stat-value">{biggestL}</div>
           </div>
