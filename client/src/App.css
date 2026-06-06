@@ -625,10 +625,12 @@ marquee {
 @media (max-width: 768px) {
   .retro-title {
     font-size: 22px;
+    letter-spacing: 1px;
   }
 
   .subtitle {
     font-size: 14px;
+    letter-spacing: 1px;
   }
 
   .week-selector {
@@ -647,6 +649,16 @@ marquee {
   .standings-table th:nth-child(3),
   .team-cell {
     display: none;
+  }
+
+  .table-header-bar {
+    font-size: 24px;
+    letter-spacing: 1px;
+  }
+
+  .footer-text,
+  .browser-notice {
+    letter-spacing: 0;
   }
 
   .fun-stats {
