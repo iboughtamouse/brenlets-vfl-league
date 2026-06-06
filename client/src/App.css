@@ -644,6 +644,11 @@ marquee {
     padding: 8px 4px;
   }
 
+  .standings-table th:nth-child(3),
+  .team-cell {
+    display: none;
+  }
+
   .fun-stats {
     flex-direction: column;
   }
