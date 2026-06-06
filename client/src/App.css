@@ -26,7 +26,7 @@ body {
     ),
     radial-gradient(circle at 20% 50%, rgba(138, 43, 226, 0.2) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(0, 255, 255, 0.2) 0%, transparent 50%);
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
   color: #00ff00;
   position: relative;
   padding: 20px;
@@ -97,8 +97,8 @@ body {
 }
 
 .retro-title {
-  font-size: 72px;
-  font-weight: bold;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 42px;
   background: linear-gradient(
     45deg,
     #ff00ff 0%,
@@ -133,6 +133,7 @@ body {
 }
 
 .subtitle {
+  font-family: 'Fredoka', sans-serif;
   font-size: 20px;
   color: #00ffff;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
@@ -221,7 +222,7 @@ marquee {
 }
 
 .event-dropdown {
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
   font-size: 20px;
   font-weight: bold;
   padding: 10px 30px 10px 15px;
@@ -248,7 +249,7 @@ marquee {
 }
 
 .event-dropdown option {
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
   font-size: 18px;
   font-weight: bold;
   background: #000033;
@@ -274,15 +275,15 @@ marquee {
 }
 
 .selector-label {
+  font-family: 'Righteous', sans-serif;
   font-size: 24px;
-  font-weight: bold;
   color: #ffff00;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   letter-spacing: 2px;
 }
 
 .week-dropdown {
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
   font-size: 22px;
   font-weight: bold;
   padding: 12px 30px 12px 15px;
@@ -309,7 +310,7 @@ marquee {
 }
 
 .week-dropdown option {
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
   font-size: 18px;
   font-weight: bold;
   background: #000033;
@@ -326,11 +327,11 @@ marquee {
 }
 
 .table-header-bar {
+  font-family: 'Bangers', cursive;
   background: linear-gradient(90deg, #ff00ff, #00ffff, #ff00ff);
   padding: 15px;
   text-align: center;
-  font-size: 28px;
-  font-weight: bold;
+  font-size: 32px;
   color: #000000;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
   letter-spacing: 3px;
@@ -347,8 +348,9 @@ marquee {
 }
 
 .standings-table th {
+  font-family: 'Righteous', sans-serif;
   padding: 15px;
-  font-size: 20px;
+  font-size: 18px;
   color: #ffff00;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
   border: 3px outset #ff00ff;
@@ -356,8 +358,9 @@ marquee {
 }
 
 .standings-table td {
+  font-family: 'VT323', monospace;
   padding: 12px;
-  font-size: 18px;
+  font-size: 22px;
   border: 2px solid #00ffff;
   text-align: center;
 }
@@ -382,7 +385,6 @@ marquee {
 }
 
 .rank-cell {
-  font-weight: bold;
   color: #ffff00;
   font-size: 20px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
@@ -405,19 +407,16 @@ marquee {
 
 .manager-cell {
   color: #00ffff;
-  font-weight: bold;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .team-cell {
   color: #ff00ff;
-  font-style: italic;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .points-cell {
   color: #00ff00;
-  font-weight: bold;
   font-size: 20px;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
 }
@@ -500,10 +499,10 @@ marquee {
 }
 
 .stat-title {
+  font-family: 'Righteous', sans-serif;
   font-size: 18px;
   color: #ffff00;
   margin-bottom: 10px;
-  font-weight: bold;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
 }
 
@@ -538,8 +537,8 @@ marquee {
 }
 
 .footer-text {
+  font-family: 'Righteous', sans-serif;
   font-size: 24px;
-  font-weight: bold;
   color: #ffff00;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
   letter-spacing: 2px;
@@ -560,9 +559,8 @@ marquee {
 }
 
 .counter-number {
-  font-family: 'Courier New', monospace;
+  font-family: 'VT323', monospace;
   font-size: 28px;
-  font-weight: bold;
   color: #ff0000;
   background: #000000;
   padding: 5px 15px;
@@ -626,7 +624,7 @@ marquee {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .retro-title {
-    font-size: 42px;
+    font-size: 22px;
   }
 
   .subtitle {
